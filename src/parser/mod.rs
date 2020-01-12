@@ -4,9 +4,10 @@ use std::{
 };
 mod token;
 
-pub fn parse(raw: String) {
+pub fn parse(raw: String) -> AST {
     let lines: Vec<&str> = raw.split('\n').collect();
-    let mut tokens: Vec<token::Token> = Vec::new();
+    let mut tokens: Vec<AST> = Vec::new();
+    tokens.push(AST::new());
 
     // generate the Regex objects from the MATCHERS array
     let mut regexes: Vec<(token::Kind, Regex)> = Vec::new();
@@ -30,11 +31,17 @@ pub fn parse(raw: String) {
                         trimmed_line = trimmed_line.split_at(caps.get(0).unwrap().as_str().len()).1;
                         match matcher.0 {
                             token::Kind::Space => { /* noop */ },
-                            token::Kind::Comment => {trimmed_line = ""; matched = true; break;}
+                            token::Kind::Comment => {trimmed_line = ""; matched = true; break;},
                             _ => {
                                 let term = token::Token::from_match(&caps, &matcher.0);
                                 println!("{:?}", &term);
-                                tokens.push(term);
+                                match tokens.last_mut() {
+                                    Some(t) => t.tokens.push(term),
+                                    None => {
+                                        eprintln!("Empty token stack (1)");
+                                        process::exit(1);
+                                    }
+                                }
                             }
                         };
                         matched = true;
@@ -51,6 +58,19 @@ pub fn parse(raw: String) {
             }
         }
     }
+
+    if tokens.len() > 1 {
+        eprintln!("Unexpected EOF; did you forget a closing parenthesis?");
+        process::exit(5);
+    }
+
+    match tokens.pop() {
+        Some(t) => t,
+        None => {
+            eprintln!("Empty token stack (2)");
+            process::exit(1);
+        }
+    }
 }
 
 pub const MATCHERS: [(token::Kind, &str); 7] = [
@@ -63,3 +83,15 @@ pub const MATCHERS: [(token::Kind, &str); 7] = [
     (token::Kind::Pattern, "^['#]\\w(?:[\\w_\\d]|::)*"),
 ];
 // This should be enough to be able to parse `let is_toast: true`
+
+pub struct AST {
+    tokens: Vec<token::Token>
+}
+
+impl AST {
+    fn new() -> AST {
+        AST {
+            tokens: Vec::new()
+        }
+    }
+}

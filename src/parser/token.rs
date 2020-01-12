@@ -1,5 +1,7 @@
-// tokens that will end up in the AST
+use super::AST;
+use regex::Captures;
 
+// tokens that will end up in the AST
 #[derive(Debug)]
 pub enum Token {
     Boolean(Boolean),
@@ -7,10 +9,11 @@ pub enum Token {
     Define,
     Let,
     Pattern(Pattern),
+    Tuple(AST),
 }
 
 impl Token {
-  pub fn from_match(caps: &super::Captures, matcher: &Kind) -> Token {
+  pub fn from_match(caps: &Captures, matcher: &Kind) -> Token {
       match matcher {
           Kind::Boolean => Token::Boolean(Boolean {
               state: caps.get(1).unwrap().as_str() == "true"
@@ -42,7 +45,11 @@ pub enum Kind {
     Space,
     Let,
     Comment,
-    Pattern
+    Pattern,
+    TupleStart,
+    TupleEnd,
+    Tuple,
+    ASTRoot
 }
 
 #[derive(Debug)]

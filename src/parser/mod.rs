@@ -2,13 +2,14 @@ use regex::{Regex, Captures};
 use std::{
     process
 };
+mod token;
 
 pub fn parse(raw: String) {
     let lines: Vec<&str> = raw.split('\n').collect();
-    let mut terms: Vec<Term> = Vec::new();
+    let mut tokens: Vec<token::Token> = Vec::new();
 
     // generate the Regex objects from the MATCHERS array
-    let mut regexes: Vec<(patpat::Kinds, Regex)> = Vec::new();
+    let mut regexes: Vec<(token::Kind, Regex)> = Vec::new();
     for matcher in MATCHERS.iter() {
         regexes.push((matcher.0, match Regex::new(matcher.1) {
             Ok(val) => val,
@@ -28,11 +29,12 @@ pub fn parse(raw: String) {
                     Some(caps) => {
                         trimmed_line = trimmed_line.split_at(caps.get(0).unwrap().as_str().len()).1;
                         match matcher.0 {
-                            patpat::Kinds::Space => { /* noop */ },
+                            token::Kind::Space => { /* noop */ },
+                            token::Kind::Comment => {trimmed_line = ""; matched = true; break;}
                             _ => {
-                                let term = Term::from_match(&caps, &matcher.0);
+                                let term = token::Token::from_match(&caps, &matcher.0);
                                 println!("{:?}", &term);
-                                terms.push(term);
+                                tokens.push(term);
                             }
                         };
                         matched = true;
@@ -51,60 +53,13 @@ pub fn parse(raw: String) {
     }
 }
 
-#[derive(Debug)]
-enum Term {
-    Boolean(patpat::Boolean),
-    Symbol(patpat::Symbol),
-    Define,
-    Space,
-    Let
-}
-
-impl Term {
-    fn from_match(caps: &Captures, matcher: &patpat::Kinds) -> Term {
-        match matcher {
-            patpat::Kinds::Boolean => Term::Boolean(patpat::Boolean {
-                state: caps.get(1).unwrap().as_str() == "true"
-            }),
-            patpat::Kinds::Let => Term::Let,
-            patpat::Kinds::Symbol => Term::Symbol(patpat::Symbol {
-                name: String::from(caps.get(0).unwrap().as_str())
-            }),
-            patpat::Kinds::Define => Term::Define,
-            _ => Term::Space,
-        }
-    }
-}
-
-mod patpat {
-    #[derive(Debug)]
-    pub struct Boolean {
-        pub state: bool
-    }
-
-    #[derive(Debug)]
-    pub struct Symbol {
-        pub name: String
-    }
-
-    #[derive(Debug)]
-    #[derive(Copy)]
-    #[derive(Clone)]
-    pub enum Kinds { // value-less enum of the different kinds of things that there can be
-        Boolean,
-        Symbol,
-        Define,
-        Space,
-        Let
-    }
-}
-
-pub const MATCHERS: [(patpat::Kinds, &str); 5] = [
-    (patpat::Kinds::Boolean, "^(true|false)"),
-    (patpat::Kinds::Let, "^let"),
-    (patpat::Kinds::Symbol, "^[a-z_][a-z_\\d]*"),
-    (patpat::Kinds::Define, "^:"),
-    (patpat::Kinds::Space, "^\\s+")
+pub const MATCHERS: [(token::Kind, &str); 7] = [
+    (token::Kind::Boolean, "^(true|false)"),
+    (token::Kind::Let, "^let"),
+    (token::Kind::Symbol, "^[a-z_][a-z_\\d]*"),
+    (token::Kind::Define, "^:"),
+    (token::Kind::Space, "^[\\s\\t]+"),
+    (token::Kind::Comment, "^//"),
+    (token::Kind::Pattern, "^['#]\\w(?:[\\w_\\d]|::)*"),
 ];
-
 // This should be enough to be able to parse `let is_toast: true`

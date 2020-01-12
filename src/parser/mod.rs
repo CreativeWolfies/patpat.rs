@@ -22,36 +22,10 @@ pub fn parse(raw: String) -> AST {
     }
 
     for line in lines.iter() { // for each line
+        //      v-- mut &str
         let mut trimmed_line = line.clone(); // a copy of the line, which progressively gets trimmed
         while trimmed_line.len() > 0 {
-            let mut matched = false;
-            for matcher in regexes.iter() {
-                match matcher.1.captures(trimmed_line) {
-                    Some(caps) => {
-                        trimmed_line = trimmed_line.split_at(caps.get(0).unwrap().as_str().len()).1;
-                        match matcher.0 {
-                            token::Kind::Space => { /* noop */ },
-                            token::Kind::Comment => {trimmed_line = ""; matched = true; break;},
-                            _ => {
-                                let term = token::Token::from_match(&caps, &matcher.0);
-                                println!("{:?}", &term);
-                                match tokens.last_mut() {
-                                    Some(t) => t.tokens.push(term),
-                                    None => {
-                                        eprintln!("Empty token stack (1)");
-                                        process::exit(1);
-                                    }
-                                }
-                            }
-                        };
-                        matched = true;
-                        break;
-                    },
-                    None => {
-                        // println!("No match -- {:?} ({:?})", &matcher.0, &trimmed_line); // DEBUG
-                    },
-                }
-            }
+            let matched = match_next_term(&mut trimmed_line, &mut tokens, &regexes);
             if !matched {
                 eprintln!("Unrecognized term: '{}'", trimmed_line);
                 process::exit(3);
@@ -71,6 +45,36 @@ pub fn parse(raw: String) -> AST {
             process::exit(1);
         }
     }
+}
+
+fn match_next_term(trimmed_line: &mut &str, tokens: &mut Vec<AST>, regexes: &Vec<(token::Kind, Regex)>) -> bool {
+    let mut matched = false;
+    for matcher in regexes.iter() {
+        match matcher.1.captures(trimmed_line) {
+            Some(caps) => {
+                *trimmed_line = trimmed_line.split_at(caps.get(0).unwrap().as_str().len()).1;
+                match matcher.0 {
+                    token::Kind::Space => { /* noop */ },
+                    token::Kind::Comment => {*trimmed_line = ""; matched = true; break;},
+                    _ => {
+                        let term = token::Token::from_match(&caps, &matcher.0);
+                        println!("{:?}", &term);
+                        match tokens.last_mut() {
+                            Some(t) => t.tokens.push(term),
+                            None => {
+                                eprintln!("Empty token stack (1)");
+                                process::exit(1);
+                            }
+                        }
+                    }
+                };
+                matched = true;
+                break;
+            },
+            None => { /* noop */ },
+        }
+    }
+    matched
 }
 
 pub const MATCHERS: [(token::Kind, &str); 7] = [

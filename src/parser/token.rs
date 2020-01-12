@@ -7,7 +7,6 @@ pub enum Token {
     Define,
     Let,
     Pattern(Pattern),
-
 }
 
 impl Token {

@@ -10,28 +10,42 @@ pub enum Token {
     Let,
     Pattern(Pattern),
     Tuple(AST),
+    Number(Number),
+    Arrow,
+    MemberAccessor,
 }
 
 impl Token {
-  pub fn from_match(caps: &Captures, matcher: &Kind) -> Token {
-      match matcher {
-          Kind::Boolean => Token::Boolean(Boolean {
-              state: caps.get(1).unwrap().as_str() == "true"
-          }),
-          Kind::Let => Token::Let,
-          Kind::Symbol => Token::Symbol(Symbol {
-              name: String::from(caps.get(0).unwrap().as_str())
-          }),
-          Kind::Define => Token::Define,
-          Kind::Pattern => Token::Pattern(Pattern {
-              name: String::from(caps.get(0).unwrap().as_str())
-          }),
-          _ => {
-              eprintln!("Unknown token kind: {:?}", matcher);
-              std::process::exit(4);
-          },
-      }
-  }
+    pub fn from_match(caps: &Captures, matcher: &Kind) -> Token {
+        match matcher {
+            Kind::Boolean => Token::Boolean(Boolean {
+                state: caps.get(1).unwrap().as_str() == "true"
+            }),
+            Kind::Let => Token::Let,
+            Kind::Symbol => Token::Symbol(Symbol {
+                name: String::from(caps.get(0).unwrap().as_str())
+            }),
+            Kind::Define => Token::Define,
+            Kind::Pattern => Token::Pattern(Pattern {
+                name: String::from(caps.get(0).unwrap().as_str())
+            }),
+            Kind::Number => Token::Number(Number {
+                value: match caps.get(0).unwrap().as_str().parse::<f64>() {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Invalid number: {} ({})", caps.get(0).unwrap().as_str(), e);
+                        std::process::exit(6);
+                    }
+                }
+            }),
+            Kind::Arrow => Token::Arrow,
+            Kind::MemberAccessor => Token::MemberAccessor,
+            _ => {
+                eprintln!("Unknown token kind: {:?}", matcher);
+                std::process::exit(4);
+            },
+        }
+    }
 }
 
 // value-less tokens
@@ -49,7 +63,10 @@ pub enum Kind {
     TupleStart,
     TupleEnd,
     Tuple,
-    ASTRoot
+    ASTRoot,
+    Number,
+    Arrow,
+    MemberAccessor,
 }
 
 #[derive(Debug)]
@@ -65,4 +82,9 @@ pub struct Symbol {
 #[derive(Debug)]
 pub struct Pattern {
     pub name: String
+}
+
+#[derive(Debug)]
+pub struct Number {
+    pub value: f64
 }

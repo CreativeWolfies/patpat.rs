@@ -1,1 +1,2 @@
 let x: true // a basic declaration
+let y: 3.1415

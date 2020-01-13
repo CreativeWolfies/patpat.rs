@@ -1,4 +1,4 @@
-use regex::{Regex, Captures};
+use regex::{Regex};
 use std::{
     process
 };
@@ -100,7 +100,7 @@ fn match_next_term(trimmed_line: &mut &str, token_stack: &mut Vec<AST>, regexes:
     res
 }
 
-pub const MATCHERS: [(token::Kind, &str); 9] = [
+pub const MATCHERS: [(token::Kind, &str); 12] = [
     (token::Kind::Boolean, "^(true|false)"),
     (token::Kind::Let, "^let"),
     (token::Kind::Symbol, "^[a-z_][a-z_\\d]*"),
@@ -110,6 +110,9 @@ pub const MATCHERS: [(token::Kind, &str); 9] = [
     (token::Kind::Pattern, "^['#]\\w(?:[\\w_\\d]|::)*"),
     (token::Kind::TupleStart, "^\\("),
     (token::Kind::TupleEnd, "^\\)"),
+    (token::Kind::Number, "^-?\\d+(?:\\.\\d*)?"),
+    (token::Kind::Arrow, "^=>"),
+    (token::Kind::MemberAccessor, "^."),
 ];
 // This should be enough to be able to parse `let is_toast: true`
 

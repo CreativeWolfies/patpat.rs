@@ -9,7 +9,13 @@ fn main() {
         exit_with_style("Invalid number of arguments");
     }
 
-    let raw = fs::read_to_string(&args[1]).unwrap();
+    let raw = match fs::read_to_string(&args[1]) {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("Couldn't read file ({}): {}", &args[1], e);
+            process::exit(7);
+        }
+    };
     parser::parse(raw);
 }
 

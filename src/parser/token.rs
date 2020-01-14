@@ -8,10 +8,14 @@ pub enum Token {
     Symbol(Symbol),
     Define,
     Let,
+    Struct,
+    Use,
+    Load,
     Pattern(Pattern),
     Tuple(AST),
     Number(Number),
     Arrow,
+    Interpretation,
     MemberAccessor,
     Type(Type),
     TypeName(TypeName),
@@ -53,6 +57,10 @@ impl Token {
                     _ => TypeStrictness::Normal,
                 }
             }),
+            Kind::Interpretation => Token::Interpretation,
+            Kind::Struct => Token::Struct,
+            Kind::Load => Token::Load,
+            Kind::Use => Token::Use,
             _ => {
                 eprintln!("Unknown token kind: {:?}", matcher);
                 std::process::exit(4);
@@ -71,6 +79,9 @@ pub enum Kind {
     Define,
     Space,
     Let,
+    Struct,
+    Use,
+    Load,
     Comment,
     Pattern,
     TupleStart,
@@ -79,6 +90,7 @@ pub enum Kind {
     ASTRoot,
     Number,
     Arrow,
+    Interpretation,
     MemberAccessor,
     Type,
     TypeName

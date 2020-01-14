@@ -100,9 +100,12 @@ fn match_next_term(trimmed_line: &mut &str, token_stack: &mut Vec<AST>, regexes:
     res
 }
 
-pub const MATCHERS: [(token::Kind, &str); 14] = [
+pub const MATCHERS: [(token::Kind, &str); 18] = [
     (token::Kind::Boolean, "^(true|false)"),
     (token::Kind::Let, "^let"),
+    (token::Kind::Struct, "^struct"),
+    (token::Kind::Use, "^#use"),
+    (token::Kind::Load, "^#load"),
     (token::Kind::Symbol, "^[a-z_][a-z_\\d]*"),
     (token::Kind::Define, "^:"),
     (token::Kind::Space, "^[\\s\\t]+"),
@@ -112,6 +115,7 @@ pub const MATCHERS: [(token::Kind, &str); 14] = [
     (token::Kind::TupleEnd, "^\\)"),
     (token::Kind::Number, "^-?\\d+(?:\\.\\d*)?"),
     (token::Kind::Arrow, "^=>"),
+    (token::Kind::Interpretation, "^->"),
     (token::Kind::MemberAccessor, "^\\."),
     (token::Kind::Type, "^<\\s*([!~]?)\\s*([A-Z][\\w_\\d]*|number|bool|string|function)\\s*>"),
     (token::Kind::TypeName, "^[A-Z][\\w_\\d]*"),

@@ -13,6 +13,7 @@ pub enum Token {
     Load,
     Pattern(Pattern),
     Tuple(AST),
+    Block(AST),
     Number(Number),
     Arrow,
     Interpretation,
@@ -93,7 +94,10 @@ pub enum Kind {
     Interpretation,
     MemberAccessor,
     Type,
-    TypeName
+    TypeName,
+    BlockStart,
+    BlockEnd,
+    Block,
 }
 
 #[derive(Debug)]

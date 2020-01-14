@@ -61,6 +61,9 @@ fn match_next_term(trimmed_line: &mut &str, token_stack: &mut Vec<AST>, regexes:
                 token::Kind::TupleStart => {
                     token_stack.push(AST::new(token::Kind::Tuple));
                 },
+                token::Kind::BlockStart => {
+                    token_stack.push(AST::new(token::Kind::Block));
+                },
                 token::Kind::TupleEnd => {
                     if let Some(ast) = token_stack.pop() {
                         match ast.kind {
@@ -81,14 +84,35 @@ fn match_next_term(trimmed_line: &mut &str, token_stack: &mut Vec<AST>, regexes:
                         eprintln!("Empty token stack (3)");
                         process::exit(1);
                     }
-                }
+                },
+                token::Kind::BlockEnd => {
+                    if let Some(ast) = token_stack.pop() {
+                        match ast.kind {
+                            token::Kind::Block => {},
+                            _ => {
+                                // TODO: syntax error
+                                eprintln!("Unexpected token BlockEnd '}}': not in a block");
+                                process::exit(102);
+                            }
+                        }
+                        if let Some(parent_ast) = token_stack.last_mut() {
+                            parent_ast.tokens.push(token::Token::Block(ast));
+                        } else {
+                            eprintln!("Empty token stack (4)");
+                            process::exit(1);
+                        }
+                    } else {
+                        eprintln!("Empty token stack (5)");
+                        process::exit(1);
+                    }
+                },
                 _ => {
                     let term = token::Token::from_match(&caps, &matcher.0);
                     println!("{:?}", &term);
                     if let Some(t) = token_stack.last_mut() {
                         t.tokens.push(term);
                     } else {
-                        eprintln!("Empty token stack (4)");
+                        eprintln!("Empty token stack (6)");
                         process::exit(1);
                     }
                 }
@@ -100,7 +124,7 @@ fn match_next_term(trimmed_line: &mut &str, token_stack: &mut Vec<AST>, regexes:
     res
 }
 
-pub const MATCHERS: [(token::Kind, &str); 18] = [
+pub const MATCHERS: [(token::Kind, &str); 20] = [
     (token::Kind::Boolean, "^(true|false)"),
     (token::Kind::Let, "^let"),
     (token::Kind::Struct, "^struct"),
@@ -119,6 +143,8 @@ pub const MATCHERS: [(token::Kind, &str); 18] = [
     (token::Kind::MemberAccessor, "^\\."),
     (token::Kind::Type, "^<\\s*([!~]?)\\s*([A-Z][\\w_\\d]*|number|bool|string|function)\\s*>"),
     (token::Kind::TypeName, "^[A-Z][\\w_\\d]*"),
+    (token::Kind::BlockStart, "^\\{"),
+    (token::Kind::BlockEnd, "^\\}"),
 ];
 // This should be enough to be able to parse `let is_toast: true`
 

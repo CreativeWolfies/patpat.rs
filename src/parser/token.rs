@@ -20,6 +20,7 @@ pub enum Token {
     MemberAccessor,
     Type(Type),
     TypeName(TypeName),
+    String(String),
 }
 
 impl Token {
@@ -98,6 +99,7 @@ pub enum Kind {
     BlockStart,
     BlockEnd,
     Block,
+    StringDelimiter,
 }
 
 #[derive(Debug)]

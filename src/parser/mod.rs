@@ -106,13 +106,56 @@ fn match_next_term(trimmed_line: &mut &str, token_stack: &mut Vec<AST>, regexes:
                         process::exit(1);
                     }
                 },
+                token::Kind::StringDelimiter => {
+                    let mut iter = trimmed_line.chars();
+                    let mut was_backslash = false;
+                    let mut length = 0usize;
+                    let mut buff = String::new();
+                    loop {
+                        match iter.next() {
+                            Some(current_char) => {
+                                length += 1;
+                                if was_backslash {
+                                    was_backslash = false;
+                                    match current_char {
+                                        '\\' => buff.push('\\'),
+                                        '"' => buff.push('"'),
+                                        'n' => buff.push('\n'),
+                                        _ => {
+                                            eprintln!("Unexpected character following backslash in stinrg literal: {}", current_char);
+                                            process::exit(103);
+                                        }
+                                    }
+                                } else {
+                                    match current_char {
+                                        '\\' => was_backslash = true,
+                                        '"' => break,
+                                        _ => buff.push(current_char),
+                                    }
+                                }
+                            },
+                            None => {
+                                eprintln!("Unexpected EOL, expected string end");
+                                process::exit(103);
+                            }
+                        }
+                    }
+
+                    *trimmed_line = trimmed_line.split_at(length).1;
+                    if let Some(t) = token_stack.last_mut() {
+                        t.tokens.push(token::Token::String(buff));
+                    } else {
+                        eprintln!("Empty token stack (6)");
+                        process::exit(1);
+                    }
+                },
                 _ => {
                     let term = token::Token::from_match(&caps, &matcher.0);
                     println!("{:?}", &term);
                     if let Some(t) = token_stack.last_mut() {
                         t.tokens.push(term);
                     } else {
-                        eprintln!("Empty token stack (6)");
+                        eprintln!("Empty token stack (7)");
                         process::exit(1);
                     }
                 }
@@ -124,7 +167,7 @@ fn match_next_term(trimmed_line: &mut &str, token_stack: &mut Vec<AST>, regexes:
     res
 }
 
-pub const MATCHERS: [(token::Kind, &str); 20] = [
+pub const MATCHERS: [(token::Kind, &str); 21] = [
     (token::Kind::Boolean, "^(true|false)"),
     (token::Kind::Let, "^let"),
     (token::Kind::Struct, "^struct"),
@@ -145,6 +188,7 @@ pub const MATCHERS: [(token::Kind, &str); 20] = [
     (token::Kind::TypeName, "^[A-Z][\\w_\\d]*"),
     (token::Kind::BlockStart, "^\\{"),
     (token::Kind::BlockEnd, "^\\}"),
+    (token::Kind::StringDelimiter, "\""),
 ];
 // This should be enough to be able to parse `let is_toast: true`
 

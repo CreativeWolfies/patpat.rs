@@ -3,6 +3,7 @@ use std::{
     process
 };
 mod token;
+use super::error::{CompError, CompInfo, Location};
 
 pub fn parse(raw: String) -> AST {
     let lines: Vec<&str> = raw.split('\n').collect();
@@ -21,11 +22,11 @@ pub fn parse(raw: String) -> AST {
         }));
     }
 
-    for line in lines.iter() { // for each line
+    for (index, line) in lines.iter().enumerate() { // for each line
         //      v-- mut &str
         let mut trimmed_line = line.clone(); // a copy of the line, which progressively gets trimmed
         while trimmed_line.len() > 0 {
-            let matched = match_next_term(&mut trimmed_line, &mut token_stack, &regexes);
+            let matched = match_next_term(&raw, index, &mut trimmed_line, &mut token_stack, &regexes);
             if !matched {
                 eprintln!("Unrecognized term: '{}'", trimmed_line);
                 process::exit(3);
@@ -50,11 +51,14 @@ pub fn parse(raw: String) -> AST {
     }
 }
 
-fn match_next_term(trimmed_line: &mut &str, token_stack: &mut Vec<AST>, regexes: &Vec<(token::Kind, Regex)>) -> bool {
+fn match_next_term(raw: &str, line_index: usize, trimmed_line: &mut &str, token_stack: &mut Vec<AST>, regexes: &Vec<(token::Kind, Regex)>) -> bool {
     let mut res = false; // wether or not a match occured
+    let mut char_index = 0usize;
     for matcher in regexes.iter() {
         if let Some(caps) = matcher.1.captures(trimmed_line) {
-            *trimmed_line = trimmed_line.split_at(caps.get(0).unwrap().as_str().len()).1;
+            let cap_length = caps.get(0).unwrap().as_str().len();
+            char_index += cap_length;
+            *trimmed_line = trimmed_line.split_at(cap_length).1;
             match matcher.0 {
                 token::Kind::Space => { /* noop */ },
                 token::Kind::Comment => {*trimmed_line = ""; res = true; break;},
@@ -69,9 +73,12 @@ fn match_next_term(trimmed_line: &mut &str, token_stack: &mut Vec<AST>, regexes:
                         match ast.kind {
                             token::Kind::Tuple => {},
                             _ => {
-                                // TODO: syntax error
-                                eprintln!("Unexpected token TupleEnd ')': not in a tuple");
-                                process::exit(101);
+                                CompError::new(
+                                    101, vec![CompInfo::new(
+                                        "Unexpected token TupleEnd ')': not in a tuple",
+                                        Location::Char(raw, line_index, char_index)
+                                    )]
+                                ).print_and_exit();
                             }
                         }
                         if let Some(parent_ast) = token_stack.last_mut() {
@@ -140,7 +147,7 @@ fn match_next_term(trimmed_line: &mut &str, token_stack: &mut Vec<AST>, regexes:
                             }
                         }
                     }
-
+                    char_index += length;
                     *trimmed_line = trimmed_line.split_at(length).1;
                     if let Some(t) = token_stack.last_mut() {
                         t.tokens.push(token::Token::String(buff));

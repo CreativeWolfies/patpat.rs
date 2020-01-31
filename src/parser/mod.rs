@@ -197,7 +197,6 @@ pub const MATCHERS: [(token::Kind, &str); 21] = [
     (token::Kind::BlockEnd, "^\\}"),
     (token::Kind::StringDelimiter, "\""),
 ];
-// This should be enough to be able to parse `let is_toast: true`
 
 #[derive(Debug)]
 pub struct TokenTree {

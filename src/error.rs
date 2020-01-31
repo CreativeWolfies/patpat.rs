@@ -3,7 +3,7 @@ use std::fmt;
 pub enum Location<'a> {
     Char(&'a str, usize, usize),
     Line(&'a str, usize),
-    Multiple(Vec<&'a str>, usize, usize), // (contents, fromLine, length)
+    LineSpan(&'a str, usize, usize), // (contents, fromLine, length)
 }
 
 pub struct CompInfo<'a> {
@@ -55,11 +55,23 @@ impl<'a> fmt::Display for CompError<'a> {
                 writeln!(f, "Compile error: {}", info.msg)?;
                 match info.location {
                     Location::Char(raw, line, ch) => {
-                        writeln!(f, "|")?;
-                        writeln!(f, "| {}", raw.lines().collect::<Vec<_>>()[line])?;
-                        writeln!(f, "| {}^", " ".repeat(ch - 1))?;
+                        writeln!(f, "┌── at line {}, char {}", line, ch)?;
+                        writeln!(f, "│ {}", raw.lines().collect::<Vec<_>>()[line])?;
+                        writeln!(f, "│ {}^", " ".repeat(ch - 1))?;
                     },
-                    _ => {/* not implemented yet */}
+                    Location::Line(raw, line) => {
+                        writeln!(f, "┌── at line {}", line)?;
+                        writeln!(f, "│ {}", raw.lines().collect::<Vec<_>>()[line])?;
+                        writeln!(f, "│")?;
+                    },
+                    Location::LineSpan(raw, line, length) => {
+                        writeln!(f, "┌── from line {} to line {}", line, line + length)?;
+                        let lines = raw.lines().skip(line).take(length);
+                        for current_line in lines {
+                            writeln!(f, "│ {}", current_line)?;
+                        }
+                        writeln!(f, "│")?;
+                    }
                 }
 
                 Ok(())

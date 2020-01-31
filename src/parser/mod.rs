@@ -5,10 +5,10 @@ use std::{
 mod token;
 use super::error::{CompError, CompInfo, Location};
 
-pub fn parse(raw: String) -> AST {
+pub fn parse(raw: String) -> TokenTree {
     let lines: Vec<&str> = raw.split('\n').collect();
-    let mut token_stack: Vec<AST> = Vec::new();
-    token_stack.push(AST::new(token::Kind::ASTRoot));
+    let mut token_stack: Vec<TokenTree> = Vec::new();
+    token_stack.push(TokenTree::new(token::Kind::TokenTreeRoot));
 
     // generate the Regex objects from the MATCHERS array
     let mut regexes: Vec<(token::Kind, Regex)> = Vec::new();
@@ -25,8 +25,9 @@ pub fn parse(raw: String) -> AST {
     for (index, line) in lines.iter().enumerate() { // for each line
         //      v-- mut &str
         let mut trimmed_line = line.clone(); // a copy of the line, which progressively gets trimmed
+        let mut current_char = 0usize;
         while trimmed_line.len() > 0 {
-            let matched = match_next_term(&raw, index, &mut trimmed_line, &mut token_stack, &regexes);
+            let matched = match_next_term(&raw, index, &mut current_char, &mut trimmed_line, &mut token_stack, &regexes);
             if !matched {
                 eprintln!("Unrecognized term: '{}'", trimmed_line);
                 process::exit(3);
@@ -51,22 +52,21 @@ pub fn parse(raw: String) -> AST {
     }
 }
 
-fn match_next_term(raw: &str, line_index: usize, trimmed_line: &mut &str, token_stack: &mut Vec<AST>, regexes: &Vec<(token::Kind, Regex)>) -> bool {
+fn match_next_term(raw: &str, line_index: usize, char_index: &mut usize, trimmed_line: &mut &str, token_stack: &mut Vec<TokenTree>, regexes: &Vec<(token::Kind, Regex)>) -> bool {
     let mut res = false; // wether or not a match occured
-    let mut char_index = 0usize;
     for matcher in regexes.iter() {
         if let Some(caps) = matcher.1.captures(trimmed_line) {
             let cap_length = caps.get(0).unwrap().as_str().len();
-            char_index += cap_length;
+            *char_index += cap_length;
             *trimmed_line = trimmed_line.split_at(cap_length).1;
             match matcher.0 {
                 token::Kind::Space => { /* noop */ },
                 token::Kind::Comment => {*trimmed_line = ""; res = true; break;},
                 token::Kind::TupleStart => {
-                    token_stack.push(AST::new(token::Kind::Tuple));
+                    token_stack.push(TokenTree::new(token::Kind::Tuple));
                 },
                 token::Kind::BlockStart => {
-                    token_stack.push(AST::new(token::Kind::Block));
+                    token_stack.push(TokenTree::new(token::Kind::Block));
                 },
                 token::Kind::TupleEnd => {
                     if let Some(ast) = token_stack.pop() {
@@ -76,7 +76,7 @@ fn match_next_term(raw: &str, line_index: usize, trimmed_line: &mut &str, token_
                                 CompError::new(
                                     101, vec![CompInfo::new(
                                         "Unexpected token TupleEnd ')': not in a tuple",
-                                        Location::Char(raw, line_index, char_index)
+                                        Location::Char(raw, line_index, *char_index)
                                     )]
                                 ).print_and_exit();
                             }
@@ -147,7 +147,7 @@ fn match_next_term(raw: &str, line_index: usize, trimmed_line: &mut &str, token_
                             }
                         }
                     }
-                    char_index += length;
+                    *char_index += length;
                     *trimmed_line = trimmed_line.split_at(length).1;
                     if let Some(t) = token_stack.last_mut() {
                         t.tokens.push(token::Token::String(buff));
@@ -200,14 +200,14 @@ pub const MATCHERS: [(token::Kind, &str); 21] = [
 // This should be enough to be able to parse `let is_toast: true`
 
 #[derive(Debug)]
-pub struct AST {
+pub struct TokenTree {
     tokens: Vec<token::Token>,
     kind: token::Kind,
 }
 
-impl AST {
-    fn new(kind: token::Kind) -> AST {
-        AST {
+impl TokenTree {
+    fn new(kind: token::Kind) -> TokenTree {
+        TokenTree {
             tokens: Vec::new(),
             kind
         }

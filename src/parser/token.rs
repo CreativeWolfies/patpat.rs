@@ -1,7 +1,7 @@
-use super::AST;
+use super::TokenTree;
 use regex::Captures;
 
-// tokens that will end up in the AST
+// tokens that will end up in the TokenTree
 #[derive(Debug)]
 pub enum Token {
     Boolean(Boolean),
@@ -12,8 +12,8 @@ pub enum Token {
     Use,
     Load,
     Pattern(Pattern),
-    Tuple(AST),
-    Block(AST),
+    Tuple(TokenTree),
+    Block(TokenTree),
     Number(Number),
     Arrow,
     Interpretation,
@@ -89,7 +89,7 @@ pub enum Kind {
     TupleStart,
     TupleEnd,
     Tuple,
-    ASTRoot,
+    TokenTreeRoot,
     Number,
     Arrow,
     Interpretation,

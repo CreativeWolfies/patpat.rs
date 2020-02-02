@@ -2,8 +2,11 @@ use regex::{Regex};
 use std::{
     process
 };
-mod token;
+
+pub mod token;
+pub mod manglers;
 use super::error::{CompError, CompInfo, Location};
+use token::{TokenTree, Token};
 
 pub fn parse(raw: String) -> TokenTree {
     let lines: Vec<&str> = raw.split('\n').collect();
@@ -197,18 +200,3 @@ pub const MATCHERS: [(token::Kind, &str); 21] = [
     (token::Kind::BlockEnd, "^\\}"),
     (token::Kind::StringDelimiter, "\""),
 ];
-
-#[derive(Debug)]
-pub struct TokenTree {
-    tokens: Vec<token::Token>,
-    kind: token::Kind,
-}
-
-impl TokenTree {
-    fn new(kind: token::Kind) -> TokenTree {
-        TokenTree {
-            tokens: Vec::new(),
-            kind
-        }
-    }
-}

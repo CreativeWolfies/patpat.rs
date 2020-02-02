@@ -1,8 +1,8 @@
-use super::TokenTree;
 use regex::Captures;
 
 // tokens that will end up in the TokenTree
 #[derive(Debug)]
+#[derive(Clone)]
 pub enum Token {
     Boolean(Boolean),
     Symbol(Symbol),
@@ -71,6 +71,22 @@ impl Token {
     }
 }
 
+#[derive(Debug)]
+#[derive(Clone)]
+pub struct TokenTree {
+    pub tokens: Vec<Token>,
+    pub kind: Kind,
+}
+
+impl TokenTree {
+    pub fn new(kind: Kind) -> TokenTree {
+        TokenTree {
+            tokens: Vec::new(),
+            kind
+        }
+    }
+}
+
 // value-less tokens
 #[derive(Debug)]
 #[derive(Copy)]
@@ -103,32 +119,38 @@ pub enum Kind {
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub struct Boolean {
     pub state: bool
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub struct Symbol {
     pub name: String
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub struct Pattern {
     pub name: String
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub struct Number {
     pub value: f64
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub struct Type {
     pub name: String,
     pub strictness: TypeStrictness
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub enum TypeStrictness {
     Loose,
     Normal,
@@ -136,6 +158,7 @@ pub enum TypeStrictness {
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub struct TypeName {
     pub name: String
 }

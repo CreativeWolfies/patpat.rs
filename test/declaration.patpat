@@ -1,6 +1,7 @@
-let x: true // a basic declaration
-let y: (3.1415)
+// let x: true // a basic declaration
+// let y: (3.1415)
 
-{
-  3
-}
+// {
+//   3
+// }
+'a: () => {}

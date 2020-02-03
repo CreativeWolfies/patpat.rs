@@ -18,7 +18,8 @@ fn main() {
             process::exit(7);
         }
     };
-    parser::parse(raw);
+    let parsed = parser::parse(raw);
+    let mangled = parser::mangle(parsed);
 }
 
 fn exit_with_style(msg: &str) {

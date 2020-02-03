@@ -6,6 +6,7 @@ use std::{
 pub mod token;
 pub mod manglers;
 use super::error::{CompError, CompInfo, Location};
+use super::ast::{AST, ASTKind};
 use token::{TokenTree, Token};
 
 pub fn parse(raw: String) -> TokenTree {
@@ -53,6 +54,12 @@ pub fn parse(raw: String) -> TokenTree {
             process::exit(1);
         }
     }
+}
+
+pub fn mangle(parsed: TokenTree) -> AST {
+    let ast = AST::parse(parsed, ASTKind::File);
+    println!("{:?}", ast);
+    ast
 }
 
 fn match_next_term(raw: &str, line_index: usize, char_index: &mut usize, trimmed_line: &mut &str, token_stack: &mut Vec<TokenTree>, regexes: &Vec<(token::Kind, Regex)>) -> bool {

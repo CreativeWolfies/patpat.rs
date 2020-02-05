@@ -19,7 +19,7 @@ fn main() {
         }
     };
     let parsed = parser::parse(raw);
-    let mangled = parser::mangle(parsed);
+    parser::construct(parsed);
 }
 
 fn exit_with_style(msg: &str) {

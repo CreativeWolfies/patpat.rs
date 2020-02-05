@@ -1,4 +1,4 @@
-use super::parser::{token::{Type, Token, TokenTree}, manglers};
+use super::parser::{token::{Type, Token, TokenTree}, construct};
 
 #[derive(Debug)]
 #[derive(Clone)]
@@ -22,7 +22,7 @@ impl AST {
     let mut raw = raw.clone();
     let mut instructions = Vec::<ASTNode>::new();
     while raw.tokens.len() > 0 {
-      match manglers::mangle(&mut raw) {
+      match construct::construct(&mut raw) {
         Some(node) => {
           instructions.push(node);
         },

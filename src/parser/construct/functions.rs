@@ -1,7 +1,8 @@
 use super::{ASTNode, TokenTree, Token, ast};
 
-pub fn mangle_pattern_declaration(tree: &mut TokenTree) -> Option<ASTNode> {
+pub fn construct_pattern_declaration(tree: &mut TokenTree) -> Option<ASTNode> {
   /*
+    Pattern declarations require the following tokens:
     - Pattern
     - Define
     - Tuple

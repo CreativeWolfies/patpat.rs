@@ -4,7 +4,7 @@ use std::{
 };
 
 pub mod token;
-pub mod manglers;
+pub mod construct;
 use super::error::{CompError, CompInfo, Location};
 use super::ast::{AST, ASTKind};
 use token::{TokenTree, Token};
@@ -56,7 +56,7 @@ pub fn parse(raw: String) -> TokenTree {
     }
 }
 
-pub fn mangle(parsed: TokenTree) -> AST {
+pub fn construct(parsed: TokenTree) -> AST {
     let ast = AST::parse(parsed, ASTKind::File);
     println!("{:?}", ast);
     ast

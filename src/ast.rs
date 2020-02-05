@@ -1,5 +1,16 @@
 use super::parser::{token::{Type, Token, TokenTree}, construct};
 
+/** Asyntactical tree: a more tree-like representation of instructions and expressions
+* Contains a set of ASTNodes, which may contain nested ASTs
+*/
+#[derive(Debug)]
+#[derive(Clone)]
+pub struct AST {
+  pub instructions: Vec<ASTNode>,
+  pub kind: ASTKind,
+}
+
+/// A node in an AST
 #[derive(Debug)]
 #[derive(Clone)]
 pub enum ASTNode {
@@ -10,19 +21,22 @@ pub enum ASTNode {
   TypedVariable(String, Type),
 }
 
-#[derive(Debug)]
-#[derive(Clone)]
-pub struct AST {
-  pub instructions: Vec<ASTNode>,
-  pub kind: ASTKind,
-}
-
 impl AST {
+  pub fn new(kind: ASTKind) -> AST {
+    //! Outputs a blank AST
+    AST {
+      instructions: Vec::new(),
+      kind
+    }
+  }
+
   pub fn parse(raw: TokenTree, kind: ASTKind) -> AST {
+    //! Parses a TokenTree (node) down into an AST
     let mut raw = raw.clone();
     let mut instructions = Vec::<ASTNode>::new();
-    while raw.tokens.len() > 0 {
-      match construct::construct(&mut raw) {
+    let mut offset = 0usize;
+    while offset < raw.tokens.len() {
+      match construct::construct(&mut raw, &mut offset) {
         Some(node) => {
           instructions.push(node);
         },
@@ -39,6 +53,7 @@ impl AST {
   }
 }
 
+/// Denotes what kind of AST an AST represents, used to determine wether an input expression is valid or not
 #[derive(Debug)]
 #[derive(Clone)]
 pub enum ASTKind {
@@ -49,6 +64,7 @@ pub enum ASTKind {
   File,
 }
 
+/// The Function type, corresponds to `TUPLE ARROW BLOCK`
 #[derive(Debug)]
 #[derive(Clone)]
 pub struct Function {
@@ -60,6 +76,10 @@ pub struct Function {
 
 impl Function {
   pub fn parse(raw: (Token, Token, Token)) -> Option<Function> {
+    /*! Takes as input three tokens and tries to parse them into a function
+    * If these three tokens happen to be a Tuple, an Arrow and a Block, then this function yields a Function.
+    * Otherwise it will return None
+    */
     match raw {
       (Token::Tuple(raw_tuple), Token::Arrow, Token::Block(raw_body)) => {
         let tuple = AST::parse(raw_tuple, ASTKind::ArgTuple);

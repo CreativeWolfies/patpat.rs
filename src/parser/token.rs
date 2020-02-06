@@ -11,7 +11,7 @@ pub enum Token {
     Struct,
     Use,
     Load,
-    Pattern(Pattern),
+    Pattern(String),
     Tuple(TokenTree),
     Block(TokenTree),
     Number(Number),
@@ -34,9 +34,7 @@ impl Token {
                 name: String::from(caps.get(0).unwrap().as_str())
             }),
             Kind::Define => Token::Define,
-            Kind::Pattern => Token::Pattern(Pattern {
-                name: String::from(caps.get(0).unwrap().as_str())
-            }),
+            Kind::Pattern => Token::Pattern(String::from(caps.get(0).unwrap().as_str())),
             Kind::Number => Token::Number(Number {
                 value: match caps.get(0).unwrap().as_str().parse::<f64>() {
                     Ok(v) => v,
@@ -127,12 +125,6 @@ pub struct Boolean {
 #[derive(Debug)]
 #[derive(Clone)]
 pub struct Symbol {
-    pub name: String
-}
-
-#[derive(Debug)]
-#[derive(Clone)]
-pub struct Pattern {
     pub name: String
 }
 

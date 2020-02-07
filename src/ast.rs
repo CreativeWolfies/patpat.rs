@@ -1,4 +1,5 @@
-use super::parser::{token::{Type, Token, TokenTree}, construct};
+use super::parser::{token::{Type, Token, TokenTree, TokenLocation}, construct};
+use super::error::*;
 
 /** Asyntactical tree: a more tree-like representation of instructions and expressions
 * Contains a set of ASTNodes, which may contain nested ASTs
@@ -75,12 +76,16 @@ pub struct Function {
 }
 
 impl Function {
-  pub fn parse(raw: (Token, Token, Token)) -> Option<Function> {
+  pub fn parse<'a>(
+    one: (Token<'a>, TokenLocation<'a>),
+    two: (Token<'a>, TokenLocation<'a>),
+    three: (Token<'a>, TokenLocation<'a>)
+  ) -> Option<Function> {
     /*! Takes as input three tokens and tries to parse them into a function
     * If these three tokens happen to be a Tuple, an Arrow and a Block, then this function yields a Function.
     * Otherwise it will return None
     */
-    match raw {
+    match (one.0, two.0, three.0) {
       (Token::Tuple(raw_tuple), Token::Arrow, Token::Block(raw_body)) => {
         let tuple = AST::parse(raw_tuple, ASTKind::ArgTuple);
         let body = AST::parse(raw_body, ASTKind::Block);

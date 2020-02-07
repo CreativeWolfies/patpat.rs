@@ -18,12 +18,23 @@ fn main() {
             process::exit(7);
         }
     };
-    let parsed = parser::parse(raw);
-    parser::construct(parsed);
+    let src_file = SrcFile {
+        path: args[1].to_string(),
+        contents: raw
+    };
+    let parsed = parser::parse(&src_file);
+    println!("{:#?}", parsed);
+    let constructed = parser::construct(parsed);
+    println!("{:#?}", constructed);
 }
 
 fn exit_with_style(msg: &str) {
     // have ~style~
     eprintln!("{}", msg);
     process::exit(1);
+}
+
+pub struct SrcFile {
+    path: String,
+    contents: String,
 }

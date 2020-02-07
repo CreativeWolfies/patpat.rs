@@ -7,12 +7,17 @@ pub mod token;
 pub mod construct;
 use super::error::{CompError, CompInfo, Location};
 use super::ast::{AST, ASTKind};
-use token::{TokenTree, Token};
+use token::{TokenTree, Token, TokenLocation};
+use crate::SrcFile;
 
-pub fn parse(raw: String) -> TokenTree {
+pub fn parse<'a>(file: &'a SrcFile) -> TokenTree<'a> {
+    let raw = &file.contents;
     let lines: Vec<&str> = raw.split('\n').collect();
     let mut token_stack: Vec<TokenTree> = Vec::new();
-    token_stack.push(TokenTree::new(token::Kind::TokenTreeRoot));
+    token_stack.push(TokenTree::new(
+        token::Kind::TokenTreeRoot,
+        TokenLocation::start(file)
+    ));
 
     // generate the Regex objects from the MATCHERS array
     let mut regexes: Vec<(token::Kind, Regex)> = Vec::new();
@@ -31,7 +36,7 @@ pub fn parse(raw: String) -> TokenTree {
         let mut trimmed_line = line.clone(); // a copy of the line, which progressively gets trimmed
         let mut current_char = 0usize;
         while trimmed_line.len() > 0 {
-            let matched = match_next_term(&raw, index, &mut current_char, &mut trimmed_line, &mut token_stack, &regexes);
+            let matched = match_next_term(file, index, &mut current_char, &mut trimmed_line, &mut token_stack, &regexes);
             if !matched {
                 eprintln!("Unrecognized term: '{}'", trimmed_line);
                 process::exit(3);
@@ -46,7 +51,6 @@ pub fn parse(raw: String) -> TokenTree {
 
     match token_stack.pop() {
         Some(t) => {
-            println!("{:?}", t);
             t
         },
         None => {
@@ -58,25 +62,39 @@ pub fn parse(raw: String) -> TokenTree {
 
 pub fn construct(parsed: TokenTree) -> AST {
     let ast = AST::parse(parsed, ASTKind::File);
-    println!("{:?}", ast);
     ast
 }
 
-fn match_next_term(raw: &str, line_index: usize, char_index: &mut usize, trimmed_line: &mut &str, token_stack: &mut Vec<TokenTree>, regexes: &Vec<(token::Kind, Regex)>) -> bool {
+fn match_next_term<'a>(
+    file: &'a SrcFile,
+    line_index: usize,
+    char_index: &mut usize,
+    trimmed_line: &mut &str,
+    token_stack: &mut Vec<TokenTree<'a>>,
+    regexes: &Vec<(token::Kind, Regex)>
+) -> bool {
+    let raw: &str = &file.contents;
     let mut res = false; // wether or not a match occured
     for matcher in regexes.iter() {
         if let Some(caps) = matcher.1.captures(trimmed_line) {
             let cap_length = caps.get(0).unwrap().as_str().len();
+            let old_char_index = *char_index;
             *char_index += cap_length;
             *trimmed_line = trimmed_line.split_at(cap_length).1;
             match matcher.0 {
                 token::Kind::Space => { /* noop */ },
                 token::Kind::Comment => {*trimmed_line = ""; res = true; break;},
                 token::Kind::TupleStart => {
-                    token_stack.push(TokenTree::new(token::Kind::Tuple));
+                    token_stack.push(TokenTree::new(
+                        token::Kind::Tuple,
+                        TokenLocation::new(file, line_index, old_char_index)
+                    ));
                 },
                 token::Kind::BlockStart => {
-                    token_stack.push(TokenTree::new(token::Kind::Block));
+                    token_stack.push(TokenTree::new(
+                        token::Kind::Block,
+                        TokenLocation::new(file, line_index, old_char_index)
+                    ));
                 },
                 token::Kind::TupleEnd => {
                     if let Some(ast) = token_stack.pop() {
@@ -92,7 +110,10 @@ fn match_next_term(raw: &str, line_index: usize, char_index: &mut usize, trimmed
                             }
                         }
                         if let Some(parent_ast) = token_stack.last_mut() {
-                            parent_ast.tokens.push(token::Token::Tuple(ast));
+                            parent_ast.tokens.push((
+                                token::Token::Tuple(ast),
+                                token::TokenLocation::new(file, line_index, old_char_index)
+                            ));
                         } else {
                             eprintln!("Empty token stack (2)");
                             process::exit(1);
@@ -113,7 +134,10 @@ fn match_next_term(raw: &str, line_index: usize, char_index: &mut usize, trimmed
                             }
                         }
                         if let Some(parent_ast) = token_stack.last_mut() {
-                            parent_ast.tokens.push(token::Token::Block(ast));
+                            parent_ast.tokens.push((
+                                token::Token::Block(ast),
+                                token::TokenLocation::new(file, line_index, old_char_index)
+                            ));
                         } else {
                             eprintln!("Empty token stack (4)");
                             process::exit(1);
@@ -160,7 +184,10 @@ fn match_next_term(raw: &str, line_index: usize, char_index: &mut usize, trimmed
                     *char_index += length;
                     *trimmed_line = trimmed_line.split_at(length).1;
                     if let Some(t) = token_stack.last_mut() {
-                        t.tokens.push(token::Token::String(buff));
+                        t.tokens.push((
+                            token::Token::String(buff),
+                            token::TokenLocation::new(file, line_index, old_char_index)
+                        ));
                     } else {
                         eprintln!("Empty token stack (6)");
                         process::exit(1);
@@ -168,9 +195,11 @@ fn match_next_term(raw: &str, line_index: usize, char_index: &mut usize, trimmed
                 },
                 _ => {
                     let term = token::Token::from_match(&caps, &matcher.0);
-                    println!("{:?}", &term);
                     if let Some(t) = token_stack.last_mut() {
-                        t.tokens.push(term);
+                        t.tokens.push((
+                            term,
+                            token::TokenLocation::new(file, line_index, old_char_index)
+                        ));
                     } else {
                         eprintln!("Empty token stack (7)");
                         process::exit(1);

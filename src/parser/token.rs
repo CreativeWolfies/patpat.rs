@@ -1,9 +1,11 @@
 use regex::Captures;
+use crate::SrcFile;
+use std::fmt;
 
 // tokens that will end up in the TokenTree
 #[derive(Debug)]
 #[derive(Clone)]
-pub enum Token {
+pub enum Token<'a> {
     Boolean(Boolean),
     Symbol(Symbol),
     Define,
@@ -12,8 +14,8 @@ pub enum Token {
     Use,
     Load,
     Pattern(String),
-    Tuple(TokenTree),
-    Block(TokenTree),
+    Tuple(TokenTree<'a>),
+    Block(TokenTree<'a>),
     Number(Number),
     Arrow,
     Interpretation,
@@ -23,8 +25,8 @@ pub enum Token {
     String(String),
 }
 
-impl Token {
-    pub fn from_match(caps: &Captures, matcher: &Kind) -> Token {
+impl<'a> Token<'a> {
+    pub fn from_match(caps: &Captures, matcher: &Kind) -> Token<'a> {
         match matcher {
             Kind::Boolean => Token::Boolean(Boolean {
                 state: caps.get(1).unwrap().as_str() == "true"
@@ -71,17 +73,50 @@ impl Token {
 
 #[derive(Debug)]
 #[derive(Clone)]
-pub struct TokenTree {
-    pub tokens: Vec<Token>,
+pub struct TokenTree<'a> {
+    pub tokens: Vec<(Token<'a>, TokenLocation<'a>)>,
     pub kind: Kind,
+    pub start_loc: TokenLocation<'a>,
 }
 
-impl TokenTree {
-    pub fn new(kind: Kind) -> TokenTree {
+impl<'a> TokenTree<'a> {
+    pub fn new(kind: Kind, start_loc: TokenLocation<'a>) -> TokenTree<'a> {
         TokenTree {
             tokens: Vec::new(),
-            kind
+            kind,
+            start_loc,
         }
+    }
+}
+
+#[derive(Clone)]
+pub struct TokenLocation<'a> {
+    pub src: &'a str,
+    pub path: String,
+    pub line: usize,
+    pub ch: usize,
+}
+
+impl<'a> TokenLocation<'a> {
+    pub fn new(file: &'a SrcFile, line: usize, ch: usize) -> TokenLocation<'a> {
+        //! Creates a new TokenLocation at the given line and character
+        TokenLocation {
+            src: &file.contents,
+            path: file.path.to_string(),
+            line,
+            ch,
+        }
+    }
+
+    pub fn start(file: &'a SrcFile) -> TokenLocation<'a> {
+        //! Creates a new TokenLocation starting at the beginning of a file
+        Self::new(file, 0, 0)
+    }
+}
+
+impl<'a> fmt::Debug for TokenLocation<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "TokenLocation({}:{}:{})", self.path, self.line, self.ch)
     }
 }
 

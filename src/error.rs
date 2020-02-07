@@ -1,7 +1,8 @@
 use std::fmt;
+use super::parser::token;
 
 pub enum Location<'a> {
-    Char(&'a str, usize, usize),
+    Char(&'a str, usize, usize), // (contents, line, char)
     Line(&'a str, usize),
     LineSpan(&'a str, usize, usize), // (contents, fromLine, length)
 }
@@ -42,7 +43,7 @@ impl<'a> CompError<'a> {
     }
 
     pub fn print_and_exit(self) {
-        println!("{}", &self);
+        eprintln!("{}", &self);
         std::process::exit(self.exit_code);
     }
 }
@@ -78,5 +79,15 @@ impl<'a> fmt::Display for CompError<'a> {
             },
             None => writeln!(f, "Unknown compile error!"),
         }
+    }
+}
+
+impl<'a> From<token::TokenLocation<'a>> for Location<'a> {
+    fn from(loc: token::TokenLocation<'a>) -> Location<'a> {
+        Location::Char(
+            loc.src,
+            loc.line,
+            loc.ch
+        )
     }
 }

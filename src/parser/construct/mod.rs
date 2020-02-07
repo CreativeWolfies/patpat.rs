@@ -10,5 +10,6 @@ pub fn construct(tree: &TokenTree, offset: &mut usize) -> Option<ASTNode> {
   */
   if let Some(x) = functions::construct_pattern_declaration(tree, offset) {Some(x)}
   else if let Some(x) = functions::construct_pattern_call(tree, offset) {Some(x)}
+  else if let Some(x) = functions::construct_standalone_function(tree, offset) {Some(x)}
   else {None}
 }

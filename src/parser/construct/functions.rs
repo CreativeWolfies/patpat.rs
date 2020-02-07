@@ -17,7 +17,7 @@ pub fn construct_pattern_declaration(tree: &TokenTree, offset: &mut usize) -> Op
   */
   // PATTERN_DEFINITION = PATTERN, {whitespace}, DEFINE, {whitespace}, FUNCTION;
   if let Token::Pattern(name) = &tree.tokens[*offset] {
-    if tree.tokens.len() == *offset {return None}
+    if tree.tokens.len() == *offset + 1 {return None}
     if let Token::Define = &tree.tokens[*offset + 1] {
       let mut iter = tree.tokens.clone().into_iter().skip(*offset + 2);
       let raw_fn = (iter.next()?, iter.next()?, iter.next()?);
@@ -39,7 +39,7 @@ pub fn construct_pattern_declaration(tree: &TokenTree, offset: &mut usize) -> Op
 pub fn construct_pattern_call(tree: &TokenTree, offset: &mut usize) -> Option<ASTNode> {
   // PATTERN_CALL = PATTERN, {whitespace}, TUPLE;
   if let Token::Pattern(name) = &tree.tokens[*offset] {
-    if tree.tokens.len() == *offset {return None}
+    if tree.tokens.len() == *offset + 1 {return None}
     if let Token::Tuple(t) = &tree.tokens[*offset + 1] {
       let args = AST::parse(t.clone(), ASTKind::ArgTuple);
       *offset += 2;
@@ -47,4 +47,18 @@ pub fn construct_pattern_call(tree: &TokenTree, offset: &mut usize) -> Option<AS
     }
   }
   None
+}
+
+pub fn construct_standalone_function(tree: &TokenTree, offset: &mut usize) -> Option<ASTNode> {
+  if tree.tokens.len() <= *offset + 2 {
+    None
+  } else {
+    let res = ast::Function::parse((
+      tree.tokens[*offset].clone(),
+      tree.tokens[*offset + 1].clone(),
+      tree.tokens[*offset + 2].clone()
+    ))?;
+    *offset += 3;
+    Some(ASTNode::Function(res))
+  }
 }

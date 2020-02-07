@@ -5,10 +5,10 @@ use std::{
 
 pub mod token;
 pub mod construct;
-use super::error::{CompError, CompInfo, Location};
+use super::error::{CompError, CompInfo, CompLocation};
 use super::ast::{AST, ASTKind};
-use token::{TokenTree, Token, TokenLocation};
-use crate::SrcFile;
+use token::{TokenTree, Token};
+use crate::{SrcFile, Location};
 
 pub fn parse<'a>(file: &'a SrcFile) -> TokenTree<'a> {
     let raw = &file.contents;
@@ -16,7 +16,7 @@ pub fn parse<'a>(file: &'a SrcFile) -> TokenTree<'a> {
     let mut token_stack: Vec<TokenTree> = Vec::new();
     token_stack.push(TokenTree::new(
         token::Kind::TokenTreeRoot,
-        TokenLocation::start(file)
+        Location::start(file)
     ));
 
     // generate the Regex objects from the MATCHERS array
@@ -60,7 +60,7 @@ pub fn parse<'a>(file: &'a SrcFile) -> TokenTree<'a> {
     }
 }
 
-pub fn construct(parsed: TokenTree) -> AST {
+pub fn construct<'a>(parsed: TokenTree<'a>) -> AST<'a> {
     let ast = AST::parse(parsed, ASTKind::File);
     ast
 }
@@ -87,13 +87,13 @@ fn match_next_term<'a>(
                 token::Kind::TupleStart => {
                     token_stack.push(TokenTree::new(
                         token::Kind::Tuple,
-                        TokenLocation::new(file, line_index, old_char_index)
+                        Location::new(file, line_index, old_char_index)
                     ));
                 },
                 token::Kind::BlockStart => {
                     token_stack.push(TokenTree::new(
                         token::Kind::Block,
-                        TokenLocation::new(file, line_index, old_char_index)
+                        Location::new(file, line_index, old_char_index)
                     ));
                 },
                 token::Kind::TupleEnd => {
@@ -104,7 +104,7 @@ fn match_next_term<'a>(
                                 CompError::new(
                                     101, vec![CompInfo::new(
                                         "Unexpected token TupleEnd ')': not in a tuple",
-                                        Location::Char(raw, line_index, *char_index)
+                                        CompLocation::Char(raw, line_index, *char_index)
                                     )]
                                 ).print_and_exit();
                             }
@@ -112,7 +112,7 @@ fn match_next_term<'a>(
                         if let Some(parent_ast) = token_stack.last_mut() {
                             parent_ast.tokens.push((
                                 token::Token::Tuple(ast),
-                                token::TokenLocation::new(file, line_index, old_char_index)
+                                Location::new(file, line_index, old_char_index)
                             ));
                         } else {
                             eprintln!("Empty token stack (2)");
@@ -136,7 +136,7 @@ fn match_next_term<'a>(
                         if let Some(parent_ast) = token_stack.last_mut() {
                             parent_ast.tokens.push((
                                 token::Token::Block(ast),
-                                token::TokenLocation::new(file, line_index, old_char_index)
+                                Location::new(file, line_index, old_char_index)
                             ));
                         } else {
                             eprintln!("Empty token stack (4)");
@@ -163,7 +163,7 @@ fn match_next_term<'a>(
                                         '"' => buff.push('"'),
                                         'n' => buff.push('\n'),
                                         _ => {
-                                            eprintln!("Unexpected character following backslash in stinrg literal: {}", current_char);
+                                            eprintln!("Unexpected character following backslash in string literal: {}", current_char);
                                             process::exit(103);
                                         }
                                     }
@@ -186,7 +186,7 @@ fn match_next_term<'a>(
                     if let Some(t) = token_stack.last_mut() {
                         t.tokens.push((
                             token::Token::String(buff),
-                            token::TokenLocation::new(file, line_index, old_char_index)
+                            Location::new(file, line_index, old_char_index)
                         ));
                     } else {
                         eprintln!("Empty token stack (6)");
@@ -198,7 +198,7 @@ fn match_next_term<'a>(
                     if let Some(t) = token_stack.last_mut() {
                         t.tokens.push((
                             term,
-                            token::TokenLocation::new(file, line_index, old_char_index)
+                            Location::new(file, line_index, old_char_index)
                         ));
                     } else {
                         eprintln!("Empty token stack (7)");

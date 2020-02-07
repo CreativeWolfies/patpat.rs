@@ -1,0 +1,13 @@
+1: others
+2: ?
+3: Unrecognized term
+4: Unknown token kind (Kind -> Token)
+5: Unexpected EOF (expecting a ')' or '}')
+6: Invalid number literal
+7: Couldn't read file
+
+101: Unexpected ')'
+102: Unexpected '}'
+103: Invalid string
+104: Duplicate #self()
+105: Duplicate #lhs()

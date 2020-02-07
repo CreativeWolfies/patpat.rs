@@ -1,6 +1,5 @@
 use regex::Captures;
-use crate::SrcFile;
-use std::fmt;
+use crate::{Location};
 
 // tokens that will end up in the TokenTree
 #[derive(Debug)]
@@ -41,7 +40,7 @@ impl<'a> Token<'a> {
                 value: match caps.get(0).unwrap().as_str().parse::<f64>() {
                     Ok(v) => v,
                     Err(e) => {
-                        eprintln!("Invalid number: {} ({})", caps.get(0).unwrap().as_str(), e);
+                        eprintln!("Invalid number literal: {} ({})", caps.get(0).unwrap().as_str(), e);
                         std::process::exit(6);
                     }
                 }
@@ -74,49 +73,18 @@ impl<'a> Token<'a> {
 #[derive(Debug)]
 #[derive(Clone)]
 pub struct TokenTree<'a> {
-    pub tokens: Vec<(Token<'a>, TokenLocation<'a>)>,
+    pub tokens: Vec<(Token<'a>, Location<'a>)>,
     pub kind: Kind,
-    pub start_loc: TokenLocation<'a>,
+    pub start_loc: Location<'a>,
 }
 
 impl<'a> TokenTree<'a> {
-    pub fn new(kind: Kind, start_loc: TokenLocation<'a>) -> TokenTree<'a> {
+    pub fn new(kind: Kind, start_loc: Location<'a>) -> TokenTree<'a> {
         TokenTree {
             tokens: Vec::new(),
             kind,
             start_loc,
         }
-    }
-}
-
-#[derive(Clone)]
-pub struct TokenLocation<'a> {
-    pub src: &'a str,
-    pub path: String,
-    pub line: usize,
-    pub ch: usize,
-}
-
-impl<'a> TokenLocation<'a> {
-    pub fn new(file: &'a SrcFile, line: usize, ch: usize) -> TokenLocation<'a> {
-        //! Creates a new TokenLocation at the given line and character
-        TokenLocation {
-            src: &file.contents,
-            path: file.path.to_string(),
-            line,
-            ch,
-        }
-    }
-
-    pub fn start(file: &'a SrcFile) -> TokenLocation<'a> {
-        //! Creates a new TokenLocation starting at the beginning of a file
-        Self::new(file, 0, 0)
-    }
-}
-
-impl<'a> fmt::Debug for TokenLocation<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "TokenLocation({}:{}:{})", self.path, self.line, self.ch)
     }
 }
 

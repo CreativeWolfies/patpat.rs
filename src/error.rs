@@ -1,7 +1,7 @@
 use std::fmt;
-use super::parser::token;
+use crate::Location;
 
-pub enum Location<'a> {
+pub enum CompLocation<'a> {
     Char(&'a str, usize, usize), // (contents, line, char)
     Line(&'a str, usize),
     LineSpan(&'a str, usize, usize), // (contents, fromLine, length)
@@ -9,7 +9,7 @@ pub enum Location<'a> {
 
 pub struct CompInfo<'a> {
     msg: &'a str,
-    location: Location<'a>,
+    location: CompLocation<'a>,
 }
 
 pub struct CompError<'a> {
@@ -18,7 +18,7 @@ pub struct CompError<'a> {
 }
 
 impl<'a> CompInfo<'a> {
-    pub fn new(msg: &'a str, location: Location<'a>) -> Self {
+    pub fn new(msg: &'a str, location: CompLocation<'a>) -> Self {
         CompInfo {
             msg,
             location,
@@ -55,17 +55,17 @@ impl<'a> fmt::Display for CompError<'a> {
             Some(info) => {
                 writeln!(f, "Compile error: {}", info.msg)?;
                 match info.location {
-                    Location::Char(raw, line, ch) => {
+                    CompLocation::Char(raw, line, ch) => {
                         writeln!(f, "┌── at line {}, char {}", line, ch)?;
                         writeln!(f, "│ {}", raw.lines().collect::<Vec<_>>()[line])?;
                         writeln!(f, "│ {}^", " ".repeat(ch - 1))?;
                     },
-                    Location::Line(raw, line) => {
+                    CompLocation::Line(raw, line) => {
                         writeln!(f, "┌── at line {}", line)?;
                         writeln!(f, "│ {}", raw.lines().collect::<Vec<_>>()[line])?;
                         writeln!(f, "│")?;
                     },
-                    Location::LineSpan(raw, line, length) => {
+                    CompLocation::LineSpan(raw, line, length) => {
                         writeln!(f, "┌── from line {} to line {}", line, line + length)?;
                         let lines = raw.lines().skip(line).take(length);
                         for current_line in lines {
@@ -82,9 +82,9 @@ impl<'a> fmt::Display for CompError<'a> {
     }
 }
 
-impl<'a> From<token::TokenLocation<'a>> for Location<'a> {
-    fn from(loc: token::TokenLocation<'a>) -> Location<'a> {
-        Location::Char(
+impl<'a> From<Location<'a>> for CompLocation<'a> {
+    fn from(loc: Location<'a>) -> CompLocation<'a> {
+        CompLocation::Char(
             loc.src,
             loc.line,
             loc.ch

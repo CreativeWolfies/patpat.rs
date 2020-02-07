@@ -4,6 +4,8 @@ use std::process;
 pub mod parser;
 pub mod error;
 pub mod ast;
+pub mod location;
+pub use location::Location;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

@@ -58,7 +58,7 @@ impl<'a> fmt::Display for CompError<'a> {
                     CompLocation::Char(raw, line, ch) => {
                         writeln!(f, "┌── at line {}, char {}", line, ch)?;
                         writeln!(f, "│ {}", raw.lines().collect::<Vec<_>>()[line])?;
-                        writeln!(f, "│ {}^", " ".repeat(ch - 1))?;
+                        writeln!(f, "│ {}^", " ".repeat(ch))?;
                     },
                     CompLocation::Line(raw, line) => {
                         writeln!(f, "┌── at line {}", line)?;
@@ -86,6 +86,16 @@ impl<'a> From<Location<'a>> for CompLocation<'a> {
     fn from(loc: Location<'a>) -> CompLocation<'a> {
         CompLocation::Char(
             loc.src,
+            loc.line,
+            loc.ch
+        )
+    }
+}
+
+impl<'a> From<&'a Location<'a>> for CompLocation<'a> {
+    fn from(loc: &'a Location<'a>) -> CompLocation<'a> {
+        CompLocation::Char(
+            loc.src.clone(),
             loc.line,
             loc.ch
         )

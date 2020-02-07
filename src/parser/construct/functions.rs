@@ -22,7 +22,7 @@ pub fn construct_pattern_declaration<'a>(tree: Rc<TokenTree<'a>>, offset: &mut u
     if tree.tokens.len() == *offset + 1 {return None}
     if let Token::Define = &tree.tokens[*offset + 1].0 {
       let mut iter = tree.tokens.clone().into_iter().skip(*offset + 2);
-      return match ast::Function::parse(iter.next()?, iter.next()?, iter.next()?) {
+      return match ast::Function::parse(iter.next()?, iter.next()?, iter.next()?, true) {
         Some(f) => {
           let location = tree.tokens[*offset].1.clone();
           *offset += 5;
@@ -61,7 +61,8 @@ pub fn construct_standalone_function<'a>(
     let res = ast::Function::parse(
       tree.tokens[*offset].clone(),
       tree.tokens[*offset + 1].clone(),
-      tree.tokens[*offset + 2].clone()
+      tree.tokens[*offset + 2].clone(),
+      false
     )?;
     let location = tree.tokens[*offset].1.clone();
     *offset += 3;

@@ -83,7 +83,8 @@ impl<'a> Function<'a> {
   pub fn parse(
     one: (Token<'a>, Location<'a>),
     two: (Token<'a>, Location<'a>),
-    three: (Token<'a>, Location<'a>)
+    three: (Token<'a>, Location<'a>),
+    is_pattern: bool
   ) -> Option<Function<'a>> {
     /*! Takes as input three tokens and tries to parse them into a function
     * If these three tokens happen to be a Tuple, an Arrow and a Block, then this function yields a Function.
@@ -96,30 +97,65 @@ impl<'a> Function<'a> {
         let mut has_self = false;
         let mut has_lhs = false;
         let mut args = Vec::<FunctionArg>::new();
+        let mut visited = Vec::<(ASTNode, Location)>::new();
         for (raw_arg, location) in tuple.instructions {
-          match raw_arg {
+          match &raw_arg {
             ASTNode::Variable(name) => args.push(FunctionArg {
               argtype: None,
               name: name.to_string()
             }),
             ASTNode::TypedVariable(name, argtype) => args.push(FunctionArg {
-              argtype: Some(argtype),
+              argtype: Some(argtype.clone()),
               name: name.to_string()
             }),
             ASTNode::PatternCall(name, _args) => { // TODO: handle _args
               if name == "#self" {
                 if has_self {
-                  let err = CompError::from(104, CompInfo::new(
+                  let mut err = CompError::from(104, CompInfo::new(
                     "Duplicate #self() in pattern declaration",
-                    CompLocation::from(location)
+                    CompLocation::from(&location)
                   ));
+                  for (r, l) in visited.into_iter() {
+                    if let ASTNode::PatternCall(n, _) = r {
+                      if n == "#self" {
+                        err.add_info(CompInfo::new(
+                          "#self() is used here",
+                          CompLocation::from(l)
+                        ));
+                        break;
+                      }
+                    }
+                  }
                   err.print_and_exit();
+                  break;
+                } else if !is_pattern {
+                  CompError::from(105, CompInfo::new(
+                    "#self() can only be used as a pattern's argument",
+                    CompLocation::from(&location)
+                  )).print_and_exit();
                 } else {
                   has_self = true;
                 }
               } else if name == "#lhs" {
-                if has_lhs {} // ERROR: duplicate #lhs()
-                else {
+                if has_lhs {
+                  let mut err = CompError::from(106, CompInfo::new(
+                    "Duplicate #lhs() in function declaration",
+                    CompLocation::from(&location)
+                  ));
+                  for (r, l) in visited.into_iter() {
+                    if let ASTNode::PatternCall(n, _) = r {
+                      if n == "#lhs" {
+                        err.add_info(CompInfo::new(
+                          "#lhs() is used here",
+                          CompLocation::from(l)
+                        ));
+                        break;
+                      }
+                    }
+                  }
+                  err.print_and_exit();
+                  break;
+                } else {
                   has_lhs = true;
                 }
               } // else ERROR
@@ -129,6 +165,7 @@ impl<'a> Function<'a> {
               return None
             }
           }
+          visited.push((raw_arg, location));
         }
         Some(Function {
           args,

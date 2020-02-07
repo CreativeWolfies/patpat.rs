@@ -10,4 +10,5 @@
 102: Unexpected '}'
 103: Invalid string
 104: Duplicate #self()
-105: Duplicate #lhs()
+105: #self() in standalone function
+106: Duplicate #lhs()

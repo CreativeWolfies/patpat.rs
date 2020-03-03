@@ -1,73 +1,4 @@
-use super::parser::{token::{Type, Token, TokenTree}, construct};
-use std::rc::Rc;
-use super::error::*;
-use crate::Location;
-
-/** Asyntactical tree: a more tree-like representation of instructions and expressions
-* Contains a set of ASTNodes, which may contain nested ASTs
-*/
-#[derive(Debug)]
-#[derive(Clone)]
-pub struct AST<'a> {
-  pub instructions: Vec<(ASTNode<'a>, Location<'a>)>,
-  pub kind: ASTKind,
-}
-
-/// A node in an AST
-#[derive(Debug)]
-#[derive(Clone)]
-pub enum ASTNode<'a> {
-  Function(Function<'a>),
-  PatternDecl(Pattern<'a>),
-  PatternCall(String, AST<'a>), // name, tuple
-  Variable(String),
-  TypedVariable(String, Type),
-}
-
-impl<'a> AST<'a> {
-  pub fn new(kind: ASTKind) -> AST<'a> {
-    //! Outputs a blank AST
-    AST {
-      instructions: Vec::new(),
-      kind
-    }
-  }
-
-  pub fn parse(raw: TokenTree<'a>, kind: ASTKind) -> AST<'a> {
-    //! Parses a TokenTree (node) down into an AST
-    let len = raw.tokens.len();
-    let raw = Rc::new(raw);
-    // let raw_c = raw.clone();
-    let mut instructions = Vec::<(ASTNode<'a>, Location<'a>)>::new();
-    let mut offset = 0usize;
-    while offset < len {
-      match construct::construct(raw.clone(), &mut offset) {
-        Some(node) => {
-          instructions.push(node);
-        },
-        None => {
-          // ERROR: invalid token
-          panic!("Unimplemented")
-        }
-      }
-    }
-    AST {
-      instructions,
-      kind
-    }
-  }
-}
-
-/// Denotes what kind of AST an AST represents, used to determine wether an input expression is valid or not
-#[derive(Debug)]
-#[derive(Clone)]
-pub enum ASTKind {
-  Tuple,
-  ArgTuple,
-  Block,
-  Expression,
-  File,
-}
+use super::*;
 
 /// The Function type, corresponds to `TUPLE ARROW BLOCK`
 #[derive(Debug)]
@@ -183,12 +114,5 @@ impl<'a> Function<'a> {
 #[derive(Clone)]
 pub struct FunctionArg {
   pub argtype: Option<Type>,
-  pub name: String,
-}
-
-#[derive(Debug)]
-#[derive(Clone)]
-pub struct Pattern<'a> {
-  pub function: Function<'a>,
   pub name: String,
 }

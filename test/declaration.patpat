@@ -7,4 +7,4 @@
 'a: (#self()) => {} // pattern declaration
 
 'a() // pattern call
-(#lhs()) => {} // standalone function
+(#lhs()) => {true} // standalone function

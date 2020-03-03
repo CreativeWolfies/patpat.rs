@@ -5,7 +5,7 @@ use crate::{Location};
 #[derive(Debug)]
 #[derive(Clone)]
 pub enum Token<'a> {
-    Boolean(Boolean),
+    Boolean(bool),
     Symbol(Symbol),
     Define,
     Let,
@@ -15,7 +15,7 @@ pub enum Token<'a> {
     Pattern(String),
     Tuple(TokenTree<'a>),
     Block(TokenTree<'a>),
-    Number(Number),
+    Number(f64),
     Arrow,
     Interpretation,
     MemberAccessor,
@@ -27,24 +27,22 @@ pub enum Token<'a> {
 impl<'a> Token<'a> {
     pub fn from_match(caps: &Captures, matcher: &Kind) -> Token<'a> {
         match matcher {
-            Kind::Boolean => Token::Boolean(Boolean {
-                state: caps.get(1).unwrap().as_str() == "true"
-            }),
+            Kind::Boolean => Token::Boolean(caps.get(1).unwrap().as_str() == "true"),
             Kind::Let => Token::Let,
             Kind::Symbol => Token::Symbol(Symbol {
                 name: String::from(caps.get(0).unwrap().as_str())
             }),
             Kind::Define => Token::Define,
             Kind::Pattern => Token::Pattern(String::from(caps.get(0).unwrap().as_str())),
-            Kind::Number => Token::Number(Number {
-                value: match caps.get(0).unwrap().as_str().parse::<f64>() {
+            Kind::Number => Token::Number(
+                match caps.get(0).unwrap().as_str().parse::<f64>() {
                     Ok(v) => v,
                     Err(e) => {
                         eprintln!("Invalid number literal: {} ({})", caps.get(0).unwrap().as_str(), e);
                         std::process::exit(6);
                     }
                 }
-            }),
+            ),
             Kind::Arrow => Token::Arrow,
             Kind::MemberAccessor => Token::MemberAccessor,
             Kind::TypeName => Token::TypeName(TypeName {
@@ -121,20 +119,8 @@ pub enum Kind {
 
 #[derive(Debug)]
 #[derive(Clone)]
-pub struct Boolean {
-    pub state: bool
-}
-
-#[derive(Debug)]
-#[derive(Clone)]
 pub struct Symbol {
     pub name: String
-}
-
-#[derive(Debug)]
-#[derive(Clone)]
-pub struct Number {
-    pub value: f64
 }
 
 #[derive(Debug)]

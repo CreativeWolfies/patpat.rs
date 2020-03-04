@@ -228,7 +228,7 @@ pub const MATCHERS: [(token::Kind, &str); 21] = [
     (token::Kind::TupleEnd, "^\\)"),
     (token::Kind::Number, "^-?\\d+(?:\\.\\d*)?"),
     (token::Kind::Arrow, "^=>"),
-    (token::Kind::Interpretation, "^->"),
+    (token::Kind::Operator, "^(->|>=|<=|==|!=|&&|\\|\\||[!+\\-/*<>%])"),
     (token::Kind::MemberAccessor, "^\\."),
     (token::Kind::Type, "^<\\s*([!~]?)\\s*([A-Z][\\w_\\d]*|number|bool|string|function)\\s*>"),
     (token::Kind::TypeName, "^[A-Z][\\w_\\d]*"),

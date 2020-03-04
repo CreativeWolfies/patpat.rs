@@ -17,7 +17,7 @@ pub enum Token<'a> {
     Block(TokenTree<'a>),
     Number(f64),
     Arrow,
-    Interpretation,
+    Operator(Operator),
     MemberAccessor,
     Type(Type),
     TypeName(TypeName),
@@ -56,7 +56,29 @@ impl<'a> Token<'a> {
                     _ => TypeStrictness::Normal,
                 }
             }),
-            Kind::Interpretation => Token::Interpretation,
+            Kind::Operator => Token::Operator(
+                match caps.get(1).unwrap().as_str() {
+                    "->" => Operator::Interpretation,
+                    "==" => Operator::Eq,
+                    "!=" => Operator::Neq,
+                    ">" => Operator::Gt,
+                    ">=" => Operator::Gte,
+                    "<" => Operator::Lt,
+                    "<=" => Operator::Lte,
+                    "!" => Operator::Not,
+                    "&&" => Operator::And,
+                    "||" => Operator::Or,
+                    "+" => Operator::Add,
+                    "-" => Operator::Sub,
+                    "*" => Operator::Mul,
+                    "/" => Operator::Div,
+                    "%" => Operator::Mod,
+                    _ => {
+                        eprintln!("Unknown operator: {:?}", caps.get(1).unwrap().as_str());
+                        std::process::exit(1);
+                    }
+                }
+            ),
             Kind::Struct => Token::Struct,
             Kind::Load => Token::Load,
             Kind::Use => Token::Use,
@@ -107,7 +129,7 @@ pub enum Kind {
     TokenTreeRoot,
     Number,
     Arrow,
-    Interpretation,
+    Operator,
     MemberAccessor,
     Type,
     TypeName,
@@ -142,4 +164,24 @@ pub enum TypeStrictness {
 #[derive(Clone)]
 pub struct TypeName {
     pub name: String
+}
+
+#[derive(Debug)]
+#[derive(Clone)]
+pub enum Operator {
+    Interpretation,
+    Gt,
+    Gte,
+    Lt,
+    Lte,
+    Eq,
+    Neq,
+    Not,
+    And,
+    Or,
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Mod,
 }

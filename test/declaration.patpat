@@ -7,4 +7,6 @@
 'a: (#self() var_name) => {} // pattern declaration
 
 'a() // pattern call
-(#lhs()) => {true} // standalone function
+(#lhs()) => {} // standalone function
+
+true && false && 2

@@ -1,6 +1,7 @@
 pub mod node;
 pub mod function;
 pub mod pattern;
+pub mod expr;
 
 pub use super::parser::{token::{Type, Token, TokenTree}, construct, token};
 pub use std::rc::Rc;
@@ -9,6 +10,7 @@ pub use crate::Location;
 pub use node::ASTNode;
 pub use function::*;
 pub use pattern::*;
+pub use expr::*;
 
 /** Asyntactical tree: a more tree-like representation of instructions and expressions
 * Contains a set of ASTNodes, which may contain nested ASTs

@@ -12,4 +12,5 @@ pub enum ASTNode<'a> {
   Boolean(bool),
   Number(f64),
   String(String),
+  Expression(Expression<'a>)
 }

@@ -168,6 +168,8 @@ pub struct TypeName {
 
 #[derive(Debug)]
 #[derive(Clone)]
+#[derive(Copy)]
+#[derive(PartialEq)]
 pub enum Operator {
     Interpretation,
     Gt,

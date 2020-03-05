@@ -6,6 +6,7 @@
 6: Invalid number literal
 7: Couldn't read file
 8: Expected term following operator
+9: Unexpected binary operator
 
 101: Unexpected ')'
 102: Unexpected '}'

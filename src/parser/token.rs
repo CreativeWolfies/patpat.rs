@@ -187,3 +187,12 @@ pub enum Operator {
     Div,
     Mod,
 }
+
+impl Operator {
+    pub fn is_unary(&self) -> bool {
+        match self {
+            Operator::Not => true,
+            _ => false,
+        }
+    }
+}

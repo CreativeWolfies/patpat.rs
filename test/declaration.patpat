@@ -9,4 +9,6 @@
 'a() // pattern call
 (#lhs()) => {} // standalone function
 
-true && false && 2
+true && !false && 2
+
+!2

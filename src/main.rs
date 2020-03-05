@@ -25,9 +25,13 @@ fn main() {
         contents: raw
     };
     let parsed = parser::parse(&src_file);
-    println!("{:#?}", parsed);
+    if let Some(_) = args.iter().find(|x| **x == String::from("--dump-parsed")) {
+        println!("{:#?}", parsed);
+    }
     let constructed = parser::construct(parsed);
-    println!("{:#?}", constructed);
+    if let Some(_) = args.iter().find(|x| **x == String::from("--dump-constructed")) {
+        println!("{:#?}", constructed);
+    }
 }
 
 fn exit_with_style(msg: &str) {

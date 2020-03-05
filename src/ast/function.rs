@@ -42,15 +42,16 @@ impl<'a> Function<'a> {
             ASTNode::PatternCall(name, _args) => { // TODO: handle _args
               if name == "#self" {
                 if has_self {
-                  let mut err = CompError::from(104, CompInfo::new(
-                    "Duplicate #self() in pattern declaration",
+                  let mut err = CompError::new(
+                    104,
+                    String::from("Duplicate #self() in pattern declaration"),
                     CompLocation::from(&location)
-                  ));
+                  );
                   for (r, l) in visited.into_iter() {
                     if let ASTNode::PatternCall(n, _) = r {
                       if n == "#self" {
                         err.add_info(CompInfo::new(
-                          "#self() is used here",
+                          String::from("#self() is used here"),
                           CompLocation::from(l)
                         ));
                         break;
@@ -58,26 +59,29 @@ impl<'a> Function<'a> {
                     }
                   }
                   err.print_and_exit();
-                  break;
+
+                  break; // required for rust to understand that this is an outgoing branch of the for loop (otherwise "visited" gets consumed several times)
                 } else if !is_pattern {
-                  CompError::from(105, CompInfo::new(
-                    "#self() can only be used as a pattern's argument",
+                  CompError::new(
+                    105,
+                    String::from("#self() can only be used as a pattern's argument"),
                     CompLocation::from(&location)
-                  )).print_and_exit();
+                  ).print_and_exit();
                 } else {
                   has_self = true;
                 }
               } else if name == "#lhs" {
                 if has_lhs {
-                  let mut err = CompError::from(106, CompInfo::new(
-                    "Duplicate #lhs() in function declaration",
+                  let mut err = CompError::new(
+                    106,
+                    String::from("Duplicate #lhs() in function declaration"),
                     CompLocation::from(&location)
-                  ));
+                  );
                   for (r, l) in visited.into_iter() {
                     if let ASTNode::PatternCall(n, _) = r {
                       if n == "#lhs" {
                         err.add_info(CompInfo::new(
-                          "#lhs() is used here",
+                          String::from("#lhs() is used here"),
                           CompLocation::from(l)
                         ));
                         break;
@@ -85,7 +89,8 @@ impl<'a> Function<'a> {
                     }
                   }
                   err.print_and_exit();
-                  break;
+
+                  break; // required for rust to understand that this is an outgoing branch of the for loop (otherwise "visited" gets consumed several times)
                 } else {
                   has_lhs = true;
                 }

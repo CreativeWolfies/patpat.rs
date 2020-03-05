@@ -5,7 +5,7 @@ use std::{
 
 pub mod token;
 pub mod construct;
-use super::error::{CompError, CompInfo, CompLocation};
+use super::error::{CompError, CompLocation};
 use super::ast::{AST, ASTKind};
 use token::{TokenTree, Token};
 use crate::{SrcFile, Location};
@@ -73,6 +73,11 @@ fn match_next_term<'a>(
     token_stack: &mut Vec<TokenTree<'a>>,
     regexes: &Vec<(token::Kind, Regex)>
 ) -> bool {
+    /*! Tries to match a term; it does this by trying to match with each term `MATCHER`.
+    * String, blocks are handled by this. Block and tuple nesting are done using a "token stack", which grows as the nesting goes on.
+    * This way, the algorithm can keep a linear approach to the code parsing.
+    * <!-- (thanks to @PhirosWolf for having helped me with this) -->
+    */
     let raw: &str = &file.contents;
     let mut res = false; // wether or not a match occured
     for matcher in regexes.iter() {
@@ -102,10 +107,9 @@ fn match_next_term<'a>(
                             token::Kind::Tuple => {},
                             _ => {
                                 CompError::new(
-                                    101, vec![CompInfo::new(
-                                        "Unexpected token TupleEnd ')': not in a tuple",
-                                        CompLocation::Char(raw, line_index, *char_index)
-                                    )]
+                                    101,
+                                    String::from("Unexpected token TupleEnd ')': not in a tuple"),
+                                    CompLocation::Char(raw, line_index, *char_index - 1)
                                 ).print_and_exit();
                             }
                         }
@@ -128,9 +132,11 @@ fn match_next_term<'a>(
                         match ast.kind {
                             token::Kind::Block => {},
                             _ => {
-                                // TODO: syntax error
-                                eprintln!("Unexpected token BlockEnd '}}': not in a block");
-                                process::exit(102);
+                                CompError::new(
+                                    102,
+                                    String::from("Unexpected token BlockEnd '}': not in a block"),
+                                    CompLocation::Char(raw, line_index, *char_index - 1)
+                                ).print_and_exit();
                             }
                         }
                         if let Some(parent_ast) = token_stack.last_mut() {
@@ -163,8 +169,11 @@ fn match_next_term<'a>(
                                         '"' => buff.push('"'),
                                         'n' => buff.push('\n'),
                                         _ => {
-                                            eprintln!("Unexpected character following backslash in string literal: {}", current_char);
-                                            process::exit(103);
+                                            CompError::new(
+                                                103,
+                                                format!("Unexpected character following backslash in string literal: {}", current_char),
+                                                CompLocation::Char(raw, line_index, *char_index + length - 1)
+                                            ).print_and_exit();
                                         }
                                     }
                                 } else {
@@ -176,8 +185,11 @@ fn match_next_term<'a>(
                                 }
                             },
                             None => {
-                                eprintln!("Unexpected EOL, expected string end");
-                                process::exit(103);
+                                CompError::new(
+                                    103,
+                                    String::from("Unexpected EOL in string literal"),
+                                    CompLocation::Char(raw, line_index, *char_index + length - 1)
+                                ).print_and_exit();
                             }
                         }
                     }

@@ -1,4 +1,4 @@
-use super::{ASTNode, TokenTree, Token, token};
+use super::{ASTNode, TokenTree, Token};
 use crate::Location;
 use std::rc::Rc;
 
@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 pub fn construct_ident<'a>(tree: Rc<TokenTree<'a>>, offset: &mut usize) -> Option<(ASTNode<'a>, Location<'a>)> {
   /*!
-  Tries to match simple terms:
+  Tries to construct simple terms:
   - numbers
   - strings
   - booleans

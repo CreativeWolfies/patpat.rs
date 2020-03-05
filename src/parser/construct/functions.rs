@@ -10,6 +10,7 @@ pub fn construct_pattern_declaration<'a>(tree: Rc<TokenTree<'a>>, offset: &mut u
   *   // body
   * }
   * ```
+  *
   * Pattern declarations require the following tokens:
   * - Pattern
   * - Define
@@ -39,6 +40,7 @@ pub fn construct_pattern_declaration<'a>(tree: Rc<TokenTree<'a>>, offset: &mut u
 }
 
 pub fn construct_pattern_call<'a>(tree: Rc<TokenTree<'a>>, offset: &mut usize) -> Option<(ASTNode<'a>, Location<'a>)> {
+  /*! Handles construct calls, ie `'pattern(...)` */
   // PATTERN_CALL = PATTERN, {whitespace}, TUPLE;
   if let Token::Pattern(name) = &tree.tokens[*offset].0 {
     if tree.tokens.len() == *offset + 1 {return None}
@@ -55,6 +57,9 @@ pub fn construct_pattern_call<'a>(tree: Rc<TokenTree<'a>>, offset: &mut usize) -
 pub fn construct_standalone_function<'a>(
   tree: Rc<TokenTree<'a>>, offset: &mut usize
 ) -> Option<(ASTNode<'a>, Location<'a>)> {
+  /*! Handles standalone functions, that is, functions that are not introduced as patterns.
+  * These may occur in expressions, parameter or as a return value.
+  */
   if tree.tokens.len() <= *offset + 2 {
     None
   } else {

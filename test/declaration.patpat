@@ -1,14 +1,5 @@
-// let x: true // a basic declaration
-// let y: (3.1415)
-
-// {
-//   3
-// }
 'a: (#self() var_name) => {} // pattern declaration
 
 'a() // pattern call
+
 (#lhs()) => {} // standalone function
-
-true && !false && 2
-
-!2

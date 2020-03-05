@@ -12,6 +12,8 @@ pub fn construct<'a>(tree: Rc<TokenTree<'a>>, offset: &mut usize) -> Option<(AST
   /*!
   * Constructs an ASTNode from the TokenTree. It does this by trying every method in order.
   * No AST building magic library is used, as to provide better granularity and more headache.
+  *
+  * Modifies `offset`
   */
   if let Some(x) = expr::construct_expression(tree.clone(), offset) {
     Some(x)
@@ -21,6 +23,7 @@ pub fn construct<'a>(tree: Rc<TokenTree<'a>>, offset: &mut usize) -> Option<(AST
 }
 
 pub fn construct_non_expression<'a>(tree: Rc<TokenTree<'a>>, offset: &mut usize) -> Option<(ASTNode<'a>, Location<'a>)> {
+  /*! Same as construct, it is separated to allow `construct_expression` to parse its terms */
   if let Some(x) = functions::construct_pattern_declaration(tree.clone(), offset) {Some(x)}
   else if let Some(x) = functions::construct_pattern_call(tree.clone(), offset) {Some(x)}
   else if let Some(x) = functions::construct_standalone_function(tree.clone(), offset) {Some(x)}

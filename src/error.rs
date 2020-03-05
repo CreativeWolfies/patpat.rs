@@ -8,7 +8,7 @@ pub enum CompLocation<'a> {
 }
 
 pub struct CompInfo<'a> {
-    msg: &'a str,
+    msg: String,
     location: CompLocation<'a>,
 }
 
@@ -18,7 +18,7 @@ pub struct CompError<'a> {
 }
 
 impl<'a> CompInfo<'a> {
-    pub fn new(msg: &'a str, location: CompLocation<'a>) -> Self {
+    pub fn new(msg: String, location: CompLocation<'a>) -> Self {
         CompInfo {
             msg,
             location,
@@ -27,19 +27,29 @@ impl<'a> CompInfo<'a> {
 }
 
 impl<'a> CompError<'a> {
-    pub fn new(exit_code: i32, infos: Vec<CompInfo<'a>>) -> Self {
+    pub fn empty(exit_code: i32) -> Self {
+        CompError {
+            exit_code,
+            infos: Vec::new()
+        }
+    }
+
+    pub fn new(exit_code: i32, msg: String, loc: CompLocation<'a>) -> Self {
+        let mut infos: Vec<CompInfo<'a>> = Vec::new();
+        infos.push(CompInfo::new(msg, loc));
         CompError {
             exit_code,
             infos,
         }
     }
 
-    pub fn from(exit_code: i32, info: CompInfo<'a>) -> Self {
-        Self::new(exit_code, vec![info])
-    }
-
     pub fn add_info(&mut self, info: CompInfo<'a>) {
         self.infos.push(info);
+    }
+
+    pub fn append(mut self, msg: String, loc: CompLocation<'a>) -> Self {
+        self.infos.push(CompInfo::new(msg, loc));
+        self
     }
 
     pub fn print_and_exit(self) {

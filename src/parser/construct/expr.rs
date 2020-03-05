@@ -1,5 +1,5 @@
-use super::{ASTNode, AST, ASTKind, TokenTree, Token, ast, ast::Expression, token::{Operator}, construct_non_expression};
-use crate::{Location, error::{CompError, CompInfo, CompLocation}};
+use super::{ASTNode, TokenTree, Token, ast::Expression, token::{Operator}, construct_non_expression};
+use crate::{Location, error::{CompError, CompLocation}};
 use std::rc::Rc;
 
 // Constructs expressions (yay!)
@@ -26,11 +26,13 @@ pub fn construct_expression<'a>(
     ```
     This object may have different operators in the `ops` array: this is due to the fact that nested expression (`a <op> (b <op> c)` for instance) are squashed into the topmost one.
     This way, the interpreter does not have to traverse the expression tree.
+
+    Modifies `offset`.
   */
 
   // TODO: handle interpretation assignements
   // TODO: handle unary operators
-  let mut first_term_ops: Vec<Operator> = handle_unary_operators(tree.clone(), offset);
+  let first_term_ops: Vec<Operator> = handle_unary_operators(tree.clone(), offset);
 
   if tree.tokens.len() > *offset + 1 { // check if we're not at the end of the token list
     if let (Token::Operator(main_op), main_loc) = tree.tokens[*offset + 1].clone() {
@@ -47,23 +49,27 @@ pub fn construct_expression<'a>(
             if op.is_unary() {break}
 
             CompError::new(
-              107, vec![
-                CompInfo::new("PatPat does not support operator precedence", CompLocation::from(loc.clone())),
-                CompInfo::new("Main operator is defined here", CompLocation::from(main_loc.clone())),
-                CompInfo::new("Consider using parentheses", CompLocation::from(loc.clone()))
-              ]
+              107,
+              String::from("PatPat does not support operator precedence"),
+              CompLocation::from(loc.clone())
+            ).append(
+              String::from("Main operator is defined here"),
+              CompLocation::from(main_loc.clone())
+            ).append(
+              String::from("Consider using parentheses"),
+              CompLocation::from(loc.clone())
             ).print_and_exit();
           } else if tree.tokens.len() == offset2 + 2 { // operator missing next term
             CompError::new(
-              8, vec![
-                CompInfo::new("Expected term following operator", CompLocation::from(loc.clone()))
-              ]
+              8,
+              String::from("Expected term following operator"),
+              CompLocation::from(loc.clone())
             ).print_and_exit();
           }
 
           offset2 += 2;
 
-          let mut termops: Vec<Operator> = handle_unary_operators(tree.clone(), &mut offset2);
+          let termops: Vec<Operator> = handle_unary_operators(tree.clone(), &mut offset2);
 
           append_term(&mut terms, &mut ops, construct_non_expression(tree.clone(), &mut offset2.clone()), termops);
           ops.push(main_op);
@@ -124,6 +130,10 @@ fn handle_unary_operators<'a>(
   tree: Rc<TokenTree<'a>>,
   offset: &mut usize
 ) -> Vec<Operator> {
+  /*!
+  Handles unary operators; returns an array of unary operators preceding a term.
+  Modifies `offset`.
+  */
   let mut term_ops: Vec<Operator> = Vec::new();
 
   while let (Token::Operator(operator), loc) = &tree.tokens[*offset] {
@@ -132,16 +142,16 @@ fn handle_unary_operators<'a>(
       *offset += 1;
       if tree.tokens.len() <= *offset {
         CompError::new(
-          8, vec![
-            CompInfo::new("Expected term following operator", CompLocation::from(loc.clone()))
-          ]
+          8,
+          String::from("Expected term following operator"),
+          CompLocation::from(loc.clone())
         ).print_and_exit();
       }
     } else {
       CompError::new(
-        9, vec![
-          CompInfo::new("Unexpected binary operator", CompLocation::from(loc))
-        ]
+        9,
+        String::from("Unexpected binary operator"),
+        CompLocation::from(loc)
       ).print_and_exit();
     }
   }

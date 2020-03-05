@@ -1,10 +1,12 @@
 use std::fmt;
 use crate::Location;
+use colored::*;
 
 pub enum CompLocation<'a> {
     Char(&'a str, usize, usize), // (contents, line, char)
     Line(&'a str, usize),
     LineSpan(&'a str, usize, usize), // (contents, fromLine, length)
+    None
 }
 
 pub struct CompInfo<'a> {
@@ -63,32 +65,63 @@ impl<'a> fmt::Display for CompError<'a> {
         let mut iter = self.infos.iter();
         match iter.next() {
             Some(info) => {
-                writeln!(f, "Compile error: {}", info.msg)?;
+                writeln!(f, "")?;
+                writeln!(f, "{} {}", "Compile error:".bold(), info.msg)?;
                 match info.location {
                     CompLocation::Char(raw, line, ch) => {
-                        writeln!(f, "┌── at line {}, char {}", line, ch)?;
-                        writeln!(f, "│ {}", raw.lines().collect::<Vec<_>>()[line])?;
-                        writeln!(f, "│ {}^", " ".repeat(ch))?;
+                        writeln!(f, "{} {}", "┌──".bright_black(), format!("(at line {}, char {})", line, ch).white())?;
+                        writeln!(f, "{} {}", "│".bright_black(), raw.lines().collect::<Vec<_>>()[line])?;
+                        writeln!(f, "{} {}^", "│".bright_black(), " ".repeat(ch))?;
                     },
                     CompLocation::Line(raw, line) => {
-                        writeln!(f, "┌── at line {}", line)?;
-                        writeln!(f, "│ {}", raw.lines().collect::<Vec<_>>()[line])?;
-                        writeln!(f, "│")?;
+                        writeln!(f, "{} {}", "┌──".bright_black(), format!("(at line {})", line).white())?;
+                        writeln!(f, "{} {}", "│".bright_black(), raw.lines().collect::<Vec<_>>()[line])?;
+                        writeln!(f, "{}", "│".bright_black())?;
                     },
                     CompLocation::LineSpan(raw, line, length) => {
-                        writeln!(f, "┌── from line {} to line {}", line, line + length)?;
+                        writeln!(f, "{} {}", "┌──".bright_black(), format!("(from line {} to line {})", line, line + length).white())?;
                         let lines = raw.lines().skip(line).take(length);
                         for current_line in lines {
-                            writeln!(f, "│ {}", current_line)?;
+                            writeln!(f, "{} {}", "│".bright_black(), current_line)?;
                         }
-                        writeln!(f, "│")?;
-                    }
+                        writeln!(f, "{}", "│".bright_black())?;
+                    },
+                    CompLocation::None => { // not recommended here
+                        writeln!(f, "{}", "╷".bright_black())?;
+                    },
                 }
 
                 Ok(())
             },
             None => writeln!(f, "Unknown compile error!"),
+        }?;
+        for info in iter {
+            match info.location {
+                CompLocation::Char(raw, line, ch) => {
+                    writeln!(f, "{} {} {} {}", "├────".bright_black(), "Info:".bold(), info.msg, format!("(at line {}, char {})", line, ch).white())?;
+                    writeln!(f, "{}   {}", "│".bright_black(), raw.lines().collect::<Vec<_>>()[line])?;
+                    writeln!(f, "{}   {}^", "│".bright_black(), " ".repeat(ch))?;
+                },
+                CompLocation::Line(raw, line) => {
+                    writeln!(f, "{} {} {} {}", "├────".bright_black(), "Info:".bold(), info.msg, format!("(at line {})", line).white())?;
+                    writeln!(f, "{}   {}", "│".bright_black(), raw.lines().collect::<Vec<_>>()[line])?;
+                    writeln!(f, "{}", "│".bright_black())?;
+                },
+                CompLocation::LineSpan(raw, line, length) => {
+                    writeln!(f, "{} {} {} {}", "├────".bright_black(), "Info:".bold(), info.msg, format!("(from line {} to line {})", line, line + length).white())?;
+                    let lines = raw.lines().skip(line).take(length);
+                    for current_line in lines {
+                        writeln!(f, "{}   {}", "│".bright_black(), current_line)?;
+                    }
+                    writeln!(f, "{}", "│".bright_black())?;
+                },
+                CompLocation::None => {
+                    writeln!(f, "{} {} {}", "├────".bright_black(), "Info:".bold(), info.msg)?;
+                }
+            }
         }
+
+        Ok(())
     }
 }
 

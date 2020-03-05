@@ -53,11 +53,11 @@ pub fn construct_expression<'a>(
               String::from("PatPat does not support operator precedence"),
               CompLocation::from(loc.clone())
             ).append(
-              String::from("Main operator is defined here"),
+              String::from("the main operator is defined here"),
               CompLocation::from(main_loc.clone())
             ).append(
-              String::from("Consider using parentheses"),
-              CompLocation::from(loc.clone())
+              String::from("consider using parentheses to separate both operators"),
+              CompLocation::None
             ).print_and_exit();
           } else if tree.tokens.len() == offset2 + 2 { // operator missing next term
             CompError::new(

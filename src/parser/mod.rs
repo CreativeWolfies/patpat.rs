@@ -12,7 +12,7 @@ use crate::{SrcFile, Location};
 
 pub fn parse<'a>(file: &'a SrcFile) -> TokenTree<'a> {
     let raw = &file.contents;
-    let lines: Vec<&str> = raw.split('\n').collect();
+    let lines: Vec<&str> = raw.lines().collect();
     let mut token_stack: Vec<TokenTree> = Vec::new();
     token_stack.push(TokenTree::new(
         token::Kind::TokenTreeRoot,
@@ -38,15 +38,21 @@ pub fn parse<'a>(file: &'a SrcFile) -> TokenTree<'a> {
         while trimmed_line.len() > 0 {
             let matched = match_next_term(file, index, &mut current_char, &mut trimmed_line, &mut token_stack, &regexes);
             if !matched {
-                eprintln!("Unrecognized term: '{}'", trimmed_line);
-                process::exit(3);
+                CompError::new(
+                    3,
+                    String::from("Unrecognized term"),
+                    CompLocation::Char(raw, index, current_char)
+                ).print_and_exit();
             }
         }
     }
 
     if token_stack.len() > 1 {
-        eprintln!("Unexpected EOF; did you forget a closing parenthesis?");
-        process::exit(5);
+        CompError::new(
+            5,
+            String::from("Unexpected EOF; did you forget a closing parenthesis?"),
+            CompLocation::Char(raw, lines.len() - 1, lines[lines.len() - 1].len())
+        ).print_and_exit();
     }
 
     match token_stack.pop() {
@@ -206,7 +212,10 @@ fn match_next_term<'a>(
                     }
                 },
                 _ => {
-                    let term = token::Token::from_match(&caps, &matcher.0);
+                    let term = token::Token::from_match(
+                        &caps, &matcher.0,
+                        Location::new(file, line_index, old_char_index)
+                    );
                     if let Some(t) = token_stack.last_mut() {
                         t.tokens.push((
                             term,
@@ -238,7 +247,7 @@ pub const MATCHERS: [(token::Kind, &str); 21] = [
     (token::Kind::Pattern, "^['#]\\w(?:[\\w_\\d]|::)*"),
     (token::Kind::TupleStart, "^\\("),
     (token::Kind::TupleEnd, "^\\)"),
-    (token::Kind::Number, "^-?\\d+(?:\\.\\d*)?"),
+    (token::Kind::Number, "^-?\\d+(?:\\.\\d*)?[\\w.]*"), // intentionally loose
     (token::Kind::Arrow, "^=>"),
     (token::Kind::Operator, "^(->|>=|<=|==|!=|&&|\\|\\||[!+\\-/*<>%])"),
     (token::Kind::MemberAccessor, "^\\."),

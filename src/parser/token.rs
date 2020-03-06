@@ -1,5 +1,6 @@
 use regex::Captures;
 use crate::{Location};
+use crate::error::*;
 
 // tokens that will end up in the TokenTree
 #[derive(Debug)]
@@ -25,7 +26,7 @@ pub enum Token<'a> {
 }
 
 impl<'a> Token<'a> {
-    pub fn from_match(caps: &Captures, matcher: &Kind) -> Token<'a> {
+    pub fn from_match(caps: &Captures, matcher: &Kind, loc: Location) -> Token<'a> {
         match matcher {
             Kind::Boolean => Token::Boolean(caps.get(1).unwrap().as_str() == "true"),
             Kind::Let => Token::Let,
@@ -38,8 +39,12 @@ impl<'a> Token<'a> {
                 match caps.get(0).unwrap().as_str().parse::<f64>() {
                     Ok(v) => v,
                     Err(e) => {
-                        eprintln!("Invalid number literal: {} ({})", caps.get(0).unwrap().as_str(), e);
-                        std::process::exit(6);
+                        CompError::new(
+                            6,
+                            format!("Invalid number literal: {} ({})", caps.get(0).unwrap().as_str(), e),
+                            CompLocation::from(loc)
+                        ).print_and_exit();
+                        0.0
                     }
                 }
             ),

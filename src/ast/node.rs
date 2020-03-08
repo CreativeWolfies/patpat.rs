@@ -20,14 +20,14 @@ pub enum ASTNode<'a> {
 impl<'a> ASTNode<'a> {
   pub fn is_valid_expr_term(&self) -> bool {
     match self {
-      ASTNode::Function(_) => true,
-      ASTNode::PatternCall(_, _) => true,
-      ASTNode::Variable(_) => true,
-      ASTNode::Boolean(_) => true,
-      ASTNode::Number(_) => true,
-      ASTNode::String(_) => true,
-      ASTNode::Tuple(_) => true,
-      ASTNode::Nil => true,
+      ASTNode::Function(_)
+      | ASTNode::PatternCall(_, _)
+      | ASTNode::Variable(_)
+      | ASTNode::Boolean(_)
+      | ASTNode::Number(_)
+      | ASTNode::String(_)
+      | ASTNode::Tuple(_)
+      | ASTNode::Nil => true,
       ASTNode::Expression(_) => true,
       _ => false,
     }
@@ -39,10 +39,10 @@ impl<'a> ASTNode<'a> {
 
   pub fn is_valid_argtuple_term(&self) -> bool {
     match self {
-      ASTNode::Variable(_) => true,
-      ASTNode::TypedVariable(_, _) => true,
-      ASTNode::PatternCall(_, _) => true,
-      ASTNode::Expression(_) => true,
+      ASTNode::Variable(_)
+      | ASTNode::TypedVariable(_, _)
+      | ASTNode::PatternCall(_, _)
+      | ASTNode::Expression(_) => true,
       _ => false,
     }
   }

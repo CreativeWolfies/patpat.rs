@@ -20,12 +20,14 @@ pub fn construct_expression<'a>(
     The returned object looks like this:
     ```
     Expression {
-      terms: [term1, term2, term3, ...],
-      ops: [op1, op2, op3]
+      terms: [Push(term1), Push(term2), Op(op1), Op(op2), Push(term3), ...],
     }
     ```
-    This object may have different operators in the `ops` array: this is due to the fact that nested expression (`a <op> (b <op> c)` for instance) are squashed into the topmost one.
+    `opX` may be of any kind.
     This way, the interpreter does not have to traverse the expression tree.
+
+    Operator precedence is not supported: this function and its childs will panic if the user types, eg. `a + b - c`; they'd have to type `(a + b) - c`.
+    This is due to the fact that these operators can easily be redefined in structs and precedence assumptions should thus not be made.
 
     Modifies `offset`.
   */

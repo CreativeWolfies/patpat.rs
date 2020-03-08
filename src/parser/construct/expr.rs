@@ -1,4 +1,4 @@
-use super::{ASTNode, TokenTree, Token, ast::Expression, token::{Operator}, construct_non_expression};
+use super::{ASTNode, TokenTree, Token, ast::{Expression, ExprTerm}, token::{Operator}, construct_non_expression};
 use crate::{Location, error::{CompError, CompLocation}};
 use std::rc::Rc;
 
@@ -39,11 +39,10 @@ pub fn construct_expression<'a>(
 
   if tree.tokens.len() > offset2 { // check if we're not at the end of the token list
     if let (Token::Operator(main_op), main_loc) = tree.tokens[offset2].clone() {
-      let mut terms: Vec<(ASTNode<'a>, Vec<Operator>, Location<'a>)> = Vec::new();
-      let mut ops: Vec<Operator> = Vec::new();
+      let mut terms: Vec<ExprTerm<'a>> = Vec::new();
 
       // Append the first term
-      append_term(&mut terms, &mut ops, first_term, first_term_ops);
+      append_term(&mut terms, first_term, first_term_ops);
 
       while tree.tokens.len() > offset2 {
         if let (Token::Operator(op), loc) = tree.tokens[offset2].clone() { // for each operator following the operator suite
@@ -73,42 +72,38 @@ pub fn construct_expression<'a>(
 
           let term_ops: Vec<Operator> = handle_unary_operators(tree.clone(), &mut offset2);
 
-          append_term(&mut terms, &mut ops, construct_non_expression(tree.clone(), &mut offset2), term_ops);
-          ops.push(main_op);
+          append_term(&mut terms, construct_non_expression(tree.clone(), &mut offset2), term_ops);
+          terms.push(ExprTerm::Op(main_op));
         } else { break } // not a binary operator; don't look further
       }
 
       let initial_loc = tree.tokens[*offset].1.clone();
       *offset = offset2;
       return Some((ASTNode::Expression(Expression {
-        terms,
-        ops
+        terms
       }), initial_loc));
     }
   }
 
   // if the expression consists only of unary operators
   if first_term_ops.len() > 0 {
-    let mut terms: Vec<(ASTNode<'a>, Vec<Operator>, Location<'a>)> = Vec::new();
-    let mut ops: Vec<Operator> = Vec::new();
-    let (node, initial_loc) = construct_non_expression(tree.clone(), &mut offset.clone()).unwrap_or_else(|| panic!("Unimplemented"));
+    let mut terms: Vec<ExprTerm<'a>> = Vec::new();
+    let (node, initial_loc) = first_term.unwrap_or_else(|| panic!("Unimplemented"));
 
     // Append the first term
-    append_term(&mut terms, &mut ops, Some((node, initial_loc.clone())), first_term_ops);
+    append_term(&mut terms, Some((node, initial_loc.clone())), first_term_ops);
 
-    *offset += 1;
+    *offset = offset2;
 
     return Some((ASTNode::Expression(Expression {
-      terms,
-      ops
+      terms
     }), initial_loc.clone()));
   }
   None
 }
 
 fn append_term<'a, 'b>(
-  terms: &'b mut Vec<(ASTNode<'a>, Vec<Operator>, Location<'a>)>,
-  ops: &'b mut Vec<Operator>,
+  terms: &'b mut Vec<ExprTerm<'a>>,
   term: Option<(ASTNode<'a>, Location<'a>)>,
   termops: Vec<Operator>
 ) {
@@ -117,7 +112,6 @@ fn append_term<'a, 'b>(
   match term {
     Some((ASTNode::Expression(mut subexpr), _loc)) => {
       terms.append(&mut subexpr.terms);
-      ops.append(&mut subexpr.ops);
     },
     Some((x, loc)) => {
       if !x.is_valid_expr_term() {
@@ -127,11 +121,14 @@ fn append_term<'a, 'b>(
           CompLocation::from(&loc)
         ).print_and_exit();
       }
-      terms.push((x, termops, loc));
+      terms.push(ExprTerm::Push(x, loc));
     },
     None => {
       panic!("Unimplemented");
     }
+  }
+  for op in termops.iter().rev() {
+    terms.push(ExprTerm::Op(op.clone()));
   }
 }
 

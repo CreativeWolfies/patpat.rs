@@ -42,6 +42,7 @@ impl<'a> ASTNode<'a> {
       ASTNode::Variable(_) => true,
       ASTNode::TypedVariable(_, _) => true,
       ASTNode::PatternCall(_, _) => true,
+      ASTNode::Expression(_) => true,
       _ => false,
     }
   }

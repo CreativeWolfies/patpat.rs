@@ -34,11 +34,10 @@ pub fn construct_expression<'a>(
   // TODO: merge terms and ops into a push/pop automaton
 
   let first_term_ops: Vec<Operator> = handle_unary_operators(tree.clone(), offset);
+  let mut offset2 = *offset;
+  let first_term = construct_non_expression(tree.clone(), &mut offset2);
 
-  if tree.tokens.len() > *offset + 1 { // check if we're not at the end of the token list
-    let mut offset2 = *offset;
-    let first_term = construct_non_expression(tree.clone(), &mut offset2);
-
+  if tree.tokens.len() > offset2 { // check if we're not at the end of the token list
     if let (Token::Operator(main_op), main_loc) = tree.tokens[offset2].clone() {
       let mut terms: Vec<(ASTNode<'a>, Vec<Operator>, Location<'a>)> = Vec::new();
       let mut ops: Vec<Operator> = Vec::new();

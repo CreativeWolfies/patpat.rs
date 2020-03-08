@@ -31,20 +31,23 @@ pub fn construct_expression<'a>(
   */
 
   // TODO: handle interpretation assignements
-  // TODO: handle unary operators
+  // TODO: merge terms and ops into a push/pop automaton
+
   let first_term_ops: Vec<Operator> = handle_unary_operators(tree.clone(), offset);
 
   if tree.tokens.len() > *offset + 1 { // check if we're not at the end of the token list
-    if let (Token::Operator(main_op), main_loc) = tree.tokens[*offset + 1].clone() {
+    let mut offset2 = *offset;
+    let first_term = construct_non_expression(tree.clone(), &mut offset2);
+
+    if let (Token::Operator(main_op), main_loc) = tree.tokens[offset2].clone() {
       let mut terms: Vec<(ASTNode<'a>, Vec<Operator>, Location<'a>)> = Vec::new();
       let mut ops: Vec<Operator> = Vec::new();
-      let mut offset2 = *offset;
 
       // Append the first term
-      append_term(&mut terms, &mut ops, construct_non_expression(tree.clone(), &mut offset.clone()), first_term_ops);
+      append_term(&mut terms, &mut ops, first_term, first_term_ops);
 
-      while tree.tokens.len() > offset2 + 1 {
-        if let (Token::Operator(op), loc) = tree.tokens[offset2 + 1].clone() { // for each operator following the operator suite
+      while tree.tokens.len() > offset2 {
+        if let (Token::Operator(op), loc) = tree.tokens[offset2].clone() { // for each operator following the operator suite
           if main_op != op { // mixed operators
             if op.is_unary() {break}
 
@@ -59,7 +62,7 @@ pub fn construct_expression<'a>(
               String::from("consider using parentheses to separate both operators"),
               CompLocation::None
             ).print_and_exit();
-          } else if tree.tokens.len() == offset2 + 2 { // operator missing next term
+          } else if tree.tokens.len() == offset2 + 1 { // operator missing next term
             CompError::new(
               8,
               String::from("Expected term following operator"),
@@ -67,17 +70,17 @@ pub fn construct_expression<'a>(
             ).print_and_exit();
           }
 
-          offset2 += 2;
+          offset2 += 1;
 
-          let termops: Vec<Operator> = handle_unary_operators(tree.clone(), &mut offset2);
+          let term_ops: Vec<Operator> = handle_unary_operators(tree.clone(), &mut offset2);
 
-          append_term(&mut terms, &mut ops, construct_non_expression(tree.clone(), &mut offset2.clone()), termops);
+          append_term(&mut terms, &mut ops, construct_non_expression(tree.clone(), &mut offset2), term_ops);
           ops.push(main_op);
         } else { break } // not a binary operator; don't look further
       }
 
       let initial_loc = tree.tokens[*offset].1.clone();
-      *offset = offset2 + 1;
+      *offset = offset2;
       return Some((ASTNode::Expression(Expression {
         terms,
         ops
@@ -118,6 +121,13 @@ fn append_term<'a, 'b>(
       ops.append(&mut subexpr.ops);
     },
     Some((x, loc)) => {
+      if !x.is_valid_expr_term() {
+        CompError::new(
+          10,
+          String::from("Invalid expression term"),
+          CompLocation::from(&loc)
+        ).print_and_exit();
+      }
       terms.push((x, termops, loc));
     },
     None => {

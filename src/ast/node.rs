@@ -14,3 +14,17 @@ pub enum ASTNode<'a> {
   String(String),
   Expression(Expression<'a>)
 }
+
+impl<'a> ASTNode<'a> {
+  pub fn is_valid_expr_term(&self) -> bool {
+    match self {
+      ASTNode::Function(_) => true,
+      ASTNode::PatternCall(_, _) => true,
+      ASTNode::Variable(_) => true,
+      ASTNode::Boolean(_) => true,
+      ASTNode::Number(_) => true,
+      ASTNode::String(_) => true,
+      _ => false,
+    }
+  }
+}

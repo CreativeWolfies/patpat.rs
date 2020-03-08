@@ -23,6 +23,7 @@ pub enum Token<'a> {
     Type(Type),
     TypeName(TypeName),
     String(String),
+    Separator,
 }
 
 impl<'a> Token<'a> {
@@ -87,6 +88,7 @@ impl<'a> Token<'a> {
             Kind::Struct => Token::Struct,
             Kind::Load => Token::Load,
             Kind::Use => Token::Use,
+            Kind::Separator => Token::Separator,
             _ => {
                 eprintln!("Unknown token kind: {:?}", matcher);
                 std::process::exit(4);
@@ -142,6 +144,7 @@ pub enum Kind {
     BlockEnd,
     Block,
     StringDelimiter,
+    Separator,
 }
 
 #[derive(Debug)]

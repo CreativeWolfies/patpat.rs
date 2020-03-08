@@ -7,6 +7,12 @@
 7: Couldn't read file
 8: Expected term following operator
 9: Unexpected binary operator
+10: Invalid expression term
+11: Invalid tuple term
+12: Invalid argument term
+13: Invalid block instruction
+14: Invalid source file instruction
+15: Missing separator or newline
 
 101: Unexpected ')'
 102: Unexpected '}'

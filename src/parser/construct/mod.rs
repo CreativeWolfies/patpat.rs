@@ -7,6 +7,7 @@ pub mod functions;
 pub mod ident;
 pub mod variables;
 pub mod expr;
+pub mod tuple;
 
 pub fn construct<'a>(tree: Rc<TokenTree<'a>>, offset: &mut usize) -> Option<(ASTNode<'a>, Location<'a>)> {
   /*!
@@ -29,5 +30,6 @@ pub fn construct_non_expression<'a>(tree: Rc<TokenTree<'a>>, offset: &mut usize)
   else if let Some(x) = functions::construct_standalone_function(tree.clone(), offset) {Some(x)}
   else if let Some(x) = ident::construct_ident(tree.clone(), offset) {Some(x)}
   else if let Some(x) = variables::construct_variable(tree.clone(), offset) {Some(x)}
+  else if let Some(x) = tuple::construct_tuple(tree.clone(), offset) {Some(x)}
   else {None}
 }

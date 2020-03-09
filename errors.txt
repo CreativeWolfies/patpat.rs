@@ -13,6 +13,8 @@
 13: Invalid block instruction
 14: Invalid source file instruction
 15: Missing separator or newline
+16: incomplete variable declaration
+17: Invalid term in variable declaration
 
 101: Unexpected ')'
 102: Unexpected '}'

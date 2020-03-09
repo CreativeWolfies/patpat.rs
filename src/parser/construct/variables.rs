@@ -1,19 +1,71 @@
-use super::{ASTNode, TokenTree, Token};
-use crate::Location;
+use super::{ASTNode, TokenTree, Token, construct};
+use crate::{Location, error::*};
 use std::rc::Rc;
 
-pub fn construct_variable<'a>(tree: Rc<TokenTree<'a>>, offset: &mut usize) -> Option<(ASTNode<'a>, Location<'a>)> {
+pub fn construct_variable<'a>(
+  tree: Rc<TokenTree<'a>>,
+  offset: &mut usize
+) -> Option<(ASTNode<'a>, Location<'a>)> {
   /*! Tries to match plain variables; does not run any lookup or simulation */
-  if let (Token::Symbol(s), loc) = &tree.tokens[*offset] {
+  if let (Token::Symbol(symbol), loc) = &tree.tokens[*offset] {
     if tree.tokens.len() > *offset + 1 {
       if let (Token::Type(t), _) = &tree.tokens[*offset + 1] {
         *offset += 2;
-        return Some((ASTNode::TypedVariable(s.name.clone(), t.clone()), loc.clone()))
+        return Some((ASTNode::TypedVariable(symbol.clone(), t.clone()), loc.clone()))
       }
     }
     *offset += 1;
-    Some((ASTNode::Variable(s.name.clone()), loc.clone()))
+    Some((ASTNode::Variable(symbol.clone()), loc.clone()))
   } else {
     None
   }
+}
+
+pub fn construct_variable_declaration<'a>(
+  tree: Rc<TokenTree<'a>>,
+  offset: &mut usize
+) -> Option<(ASTNode<'a>, Location<'a>)> {
+  if let (Token::Let, loc) = &tree.tokens[*offset] {
+    if tree.tokens.len() == *offset + 1 {
+      CompError::new(
+        16,
+        String::from("Incomplete variable declaration"),
+        CompLocation::from(loc)
+      ).print_and_exit();
+    }
+    if let (Token::Symbol(symbol), _) = &tree.tokens[*offset + 1] {
+      if tree.tokens.len() > *offset + 2 {
+        if let (Token::Define, loc3) = &tree.tokens[*offset + 2] {
+          if tree.tokens.len() == *offset + 3 {
+            CompError::new(
+              16,
+              String::from("Incomplete variable declaration"),
+              CompLocation::from(loc3)
+            ).append(
+              String::from("Variable declaration starts here"),
+              CompLocation::from(loc)
+            ).print_and_exit();
+          }
+          *offset += 3;
+          let expr = construct(tree.clone(), offset).unwrap_or_else(|| panic!("Unimplemented"));
+          return Some((
+            ASTNode::VariableInit(symbol.clone(), Box::new(expr.0)),
+            loc.clone()
+          ));
+        }
+      }
+      *offset += 2;
+      return Some((
+        ASTNode::VariableDecl(symbol.clone()),
+        loc.clone()
+      ));
+    } else {
+      CompError::new(
+        17,
+        String::from("Invalid term in variable declaration"),
+        CompLocation::from(&tree.tokens[*offset + 1].1)
+      ).print_and_exit();
+    }
+  }
+  None
 }

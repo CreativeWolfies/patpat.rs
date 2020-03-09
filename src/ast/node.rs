@@ -10,6 +10,8 @@ pub enum ASTNode<'a> {
   Pattern(String),
   Variable(String),
   TypedVariable(String, Type),
+  VariableDecl(String),
+  VariableInit(String, Box<ASTNode<'a>>),
   Boolean(bool),
   Number(f64),
   String(String),
@@ -54,7 +56,9 @@ impl<'a> ASTNode<'a> {
       return true;
     }
     match self {
-      ASTNode::PatternDecl(_) => true,
+      ASTNode::PatternDecl(_)
+      | ASTNode::VariableDecl(_)
+      | ASTNode::VariableInit(_, _) => true,
       _ => false,
     }
   }

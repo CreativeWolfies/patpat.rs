@@ -7,7 +7,7 @@ use crate::error::*;
 #[derive(Clone)]
 pub enum Token<'a> {
     Boolean(bool),
-    Symbol(Symbol),
+    Symbol(String),
     Define,
     Let,
     Struct,
@@ -31,9 +31,9 @@ impl<'a> Token<'a> {
         match matcher {
             Kind::Boolean => Token::Boolean(caps.get(1).unwrap().as_str() == "true"),
             Kind::Let => Token::Let,
-            Kind::Symbol => Token::Symbol(Symbol {
-                name: String::from(caps.get(0).unwrap().as_str())
-            }),
+            Kind::Symbol => Token::Symbol(
+                String::from(caps.get(0).unwrap().as_str())
+            ),
             Kind::Define => Token::Define,
             Kind::Pattern => Token::Pattern(String::from(caps.get(0).unwrap().as_str())),
             Kind::Number => Token::Number(
@@ -145,12 +145,6 @@ pub enum Kind {
     Block,
     StringDelimiter,
     Separator,
-}
-
-#[derive(Debug)]
-#[derive(Clone)]
-pub struct Symbol {
-    pub name: String
 }
 
 #[derive(Debug)]

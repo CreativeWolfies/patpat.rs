@@ -7,6 +7,7 @@ pub enum ASTNode<'a> {
   Function(Function<'a>),
   PatternDecl(Pattern<'a>),
   PatternCall(String, AST<'a>), // name, tuple
+  Pattern(String),
   Variable(String),
   TypedVariable(String, Type),
   Boolean(bool),
@@ -21,6 +22,7 @@ impl<'a> ASTNode<'a> {
   pub fn is_valid_expr_term(&self) -> bool {
     match self {
       ASTNode::Function(_)
+      | ASTNode::Pattern(_)
       | ASTNode::PatternCall(_, _)
       | ASTNode::Variable(_)
       | ASTNode::Boolean(_)

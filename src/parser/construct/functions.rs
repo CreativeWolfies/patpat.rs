@@ -74,3 +74,12 @@ pub fn construct_standalone_function<'a>(
     Some((ASTNode::Function(res), location))
   }
 }
+
+pub fn construct_standalone_pattern<'a>(
+  tree: Rc<TokenTree<'a>>, offset: &mut usize
+) -> Option<(ASTNode<'a>, Location<'a>)> {
+  if let (Token::Pattern(p), loc) = &tree.tokens[*offset] {
+    *offset += 1;
+    Some((ASTNode::Pattern(p.clone()), loc.clone()))
+  } else {None}
+}

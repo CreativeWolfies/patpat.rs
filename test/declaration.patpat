@@ -1,4 +1,4 @@
-'a: (#self() var_name) => {} // pattern declaration
+'a: (#self(), var_name) => {} // pattern declaration
 
 'a() // pattern call
 

@@ -10,6 +10,7 @@ pub enum ASTNode<'a> {
   Pattern(String),
   Variable(String),
   TypedVariable(String, Type),
+  TypeName(token::TypeName),
   VariableDecl(String),
   VariableInit(String, Box<ASTNode<'a>>),
   Boolean(bool),
@@ -17,6 +18,7 @@ pub enum ASTNode<'a> {
   String(String),
   Expression(Expression<'a>),
   Tuple(AST<'a>),
+  Interpretation(token::TypeName, token::TypeName, AST<'a>), // from, to, body
   Nil,
 }
 
@@ -31,6 +33,7 @@ impl<'a> ASTNode<'a> {
       | ASTNode::Number(_)
       | ASTNode::String(_)
       | ASTNode::Tuple(_)
+      | ASTNode::TypeName(_)
       | ASTNode::Nil => true,
       ASTNode::Expression(_) => true,
       _ => false,
@@ -57,6 +60,7 @@ impl<'a> ASTNode<'a> {
     }
     match self {
       ASTNode::PatternDecl(_)
+      | ASTNode::Interpretation(_, _, _)
       | ASTNode::VariableDecl(_)
       | ASTNode::VariableInit(_, _) => true,
       _ => false,

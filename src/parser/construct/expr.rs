@@ -1,4 +1,4 @@
-use super::{ASTNode, TokenTree, Token, ast::{Expression, ExprTerm}, token::{Operator}, construct_non_expression};
+use super::{ASTNode, ASTKind, AST, TokenTree, Token, ast::{Expression, ExprTerm}, token::{Operator}, construct_non_expression};
 use crate::{Location, error::{CompError, CompLocation}};
 use std::rc::Rc;
 
@@ -41,6 +41,22 @@ pub fn construct_expression<'a>(
 
   if tree.tokens.len() > offset2 { // check if we're not at the end of the token list
     if let (Token::Operator(main_op), main_loc) = tree.tokens[offset2].clone() {
+      if let Operator::Interpretation = main_op {
+        if tree.tokens.len() > offset2 + 2 {
+          if let (Token::Define, define_loc) = &tree.tokens[offset2 + 2] {
+            if first_term_ops.len() > 0 {
+              CompError::new(
+                18,
+                String::from("Invalid term in interpretation definition: unexpected unary operator"),
+                CompLocation::from(&tree.tokens[*offset].1)
+              ).print_and_exit();
+            }
+            let res = handle_interpretation_definition(tree.clone(), &mut offset2, first_term.unwrap_or_else(|| panic!("Unimplemented")).0, main_loc, define_loc.clone());
+            *offset = offset2;
+            return res;
+          }
+        }
+      }
       let mut terms: Vec<ExprTerm<'a>> = Vec::new();
 
       // Append the first term
@@ -165,4 +181,49 @@ fn handle_unary_operators<'a>(
   }
 
   term_ops
+}
+
+fn handle_interpretation_definition<'a>(
+  tree: Rc<TokenTree<'a>>,
+  offset: &mut usize,
+  from: ASTNode<'a>,
+  op_loc: Location<'a>,
+  define_loc: Location<'a>
+) -> Option<(ASTNode<'a>, Location<'a>)> {
+  // TODO: TypeNames in ASTNode + verify that first term is a typename
+  if let ASTNode::TypeName(from2) = from {
+    if let (Token::TypeName(to), _) = tree.tokens[*offset + 1].clone() {
+      if tree.tokens.len() <= *offset + 3 {
+        CompError::new(
+          18,
+          String::from("Invalid EOF in interpretation definition: expected body"),
+          CompLocation::from(define_loc)
+        ).print_and_exit();
+      }
+      if let (Token::Block(tree2), _) = tree.tokens[*offset + 3].clone() {
+        let body = AST::parse(tree2, ASTKind::Block);
+        *offset += 4;
+        return Some((ASTNode::Interpretation(from2, to, body), op_loc));
+      } else {
+        CompError::new(
+          18,
+          String::from("Invalid term in interpretation definition: expected body"),
+          CompLocation::from(&tree.tokens[*offset + 3].1)
+        ).print_and_exit();
+      }
+    } else {
+      CompError::new(
+        18,
+        String::from("Invalid term in interpretation definition: expected TypeName"),
+        CompLocation::from(&tree.tokens[*offset + 1].1)
+      ).print_and_exit();
+    }
+  } else {
+    CompError::new(
+      18,
+      String::from("Invalid term in interpretation definition: expected TypeName"),
+      CompLocation::from(&tree.tokens[*offset - 1].1)
+    ).print_and_exit();
+  }
+  None
 }

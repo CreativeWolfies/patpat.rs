@@ -15,6 +15,7 @@ pub fn construct_ident<'a>(tree: Rc<TokenTree<'a>>, offset: &mut usize) -> Optio
     (Token::Boolean(b), loc) => Some((ASTNode::Boolean(*b), loc.clone())),
     (Token::Number(n), loc) => Some((ASTNode::Number(*n), loc.clone())),
     (Token::String(s), loc) => Some((ASTNode::String(s.clone()), loc.clone())),
+    (Token::TypeName(n), loc) => Some((ASTNode::TypeName(n.clone()), loc.clone())),
     _ => None
   };
   if let None = res {}

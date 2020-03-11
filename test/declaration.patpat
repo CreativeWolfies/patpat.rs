@@ -3,3 +3,7 @@
 'a() // pattern call
 
 (#lhs()) => {} // standalone function
+
+A -> B: {
+
+}

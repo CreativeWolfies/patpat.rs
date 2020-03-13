@@ -90,7 +90,26 @@ pub fn construct_expression<'a>(
 
           let term_ops: Vec<Operator> = handle_unary_operators(tree.clone(), &mut offset2);
 
-          append_term(&mut terms, construct_non_expression(tree.clone(), &mut offset2), term_ops);
+          let res = construct_non_expression(tree.clone(), &mut offset2).unwrap_or_else(|| panic!("Unimplemented"));
+          if let Operator::Interpretation = op {
+            if term_ops.len() > 0 {
+              CompError::new(
+                18,
+                String::from("Invalid term in casting expression: unexpected unary operator"),
+                CompLocation::from(&res.1)
+              ).print_and_exit();
+            }
+            if let (ASTNode::TypeName(_), _) = &res {}
+            else {
+              CompError::new(
+                18,
+                String::from("Expected TypeName in casting expression"),
+                CompLocation::from(&res.1)
+              ).print_and_exit();
+            }
+          }
+
+          append_term(&mut terms, Some(res), term_ops);
           terms.push(ExprTerm::Op(main_op));
         } else { break } // not a binary operator; don't look further
       }

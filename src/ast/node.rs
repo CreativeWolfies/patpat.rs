@@ -35,8 +35,9 @@ impl<'a> ASTNode<'a> {
       | ASTNode::String(_)
       | ASTNode::Tuple(_)
       | ASTNode::TypeName(_)
-      | ASTNode::Nil => true,
-      ASTNode::Expression(_) => true,
+      | ASTNode::Nil
+      | ASTNode::VariableDef(_, _)
+      | ASTNode::Expression(_) => true,
       _ => false,
     }
   }
@@ -63,7 +64,6 @@ impl<'a> ASTNode<'a> {
       ASTNode::PatternDecl(_)
       | ASTNode::Interpretation(_, _, _)
       | ASTNode::VariableDecl(_)
-      | ASTNode::VariableDef(_, _)
       | ASTNode::VariableInit(_, _) => true,
       _ => false,
     }

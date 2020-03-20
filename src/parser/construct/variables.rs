@@ -2,8 +2,6 @@ use super::{ASTNode, TokenTree, Token, construct};
 use crate::{Location, error::*};
 use std::rc::Rc;
 
-// TODO: check that `expr` is a valid thing to put in a variable
-
 pub fn construct_variable<'a>(
   tree: Rc<TokenTree<'a>>,
   offset: &mut usize
@@ -52,6 +50,15 @@ pub fn construct_variable_declaration<'a>(
           *offset += 3;
           let expr = construct(tree.clone(), offset).unwrap_or_else(|| panic!("Unimplemented"));
 
+          if !expr.0.is_valid_expr_term() {
+            CompError::new(
+              19,
+              String::from("Invalid term in variable definition"),
+              CompLocation::from(expr.1)
+            ).print_and_exit();
+            panic!(); // outgoing branch
+          }
+
           return Some((
             ASTNode::VariableInit(symbol.clone(), Box::new(expr.0)),
             loc.clone()
@@ -92,6 +99,15 @@ pub fn construct_variable_definition<'a>(
 
         *offset += 2;
         let expr = construct(tree.clone(), offset).unwrap_or_else(|| panic!("Unimplemented"));
+
+        if !expr.0.is_valid_expr_term() {
+          CompError::new(
+            19,
+            String::from("Invalid term in variable definition"),
+            CompLocation::from(expr.1)
+          ).print_and_exit();
+          panic!(); // outgoing branch
+        }
 
         return Some((
           ASTNode::VariableDef(symbol.clone(), Box::new(expr.0)),

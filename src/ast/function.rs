@@ -39,7 +39,7 @@ impl<'a> Function<'a> {
               argtype: Some(argtype.clone()),
               name: name.to_string()
             }),
-            ASTNode::PatternCall(name, _args) => { // TODO: handle _args
+            ASTNode::PatternCall(name, _args) => {
               if name == "#self" {
                 if has_self {
                   let mut err = CompError::new(
@@ -94,11 +94,22 @@ impl<'a> Function<'a> {
                 } else {
                   has_lhs = true;
                 }
-              } // else ERROR
+              } else {
+                CompError::new(
+                  12,
+                  String::from("Invalid argument in function definition: unrecognized pattern"),
+                  CompLocation::from(location)
+                ).print_and_exit();
+                break;
+              }
             },
             _ => {
-              // ERROR: invalid element in array tuple (should be handled by AST::parse)
-              return None
+              CompError::new(
+                12,
+                String::from("Invalid argument in function definition"),
+                CompLocation::from(location)
+              ).print_and_exit();
+              break;
             }
           }
           visited.push((raw_arg, location));

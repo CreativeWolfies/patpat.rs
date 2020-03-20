@@ -32,9 +32,6 @@ pub fn construct_expression<'a>(
     Modifies `offset`.
   */
 
-  // TODO: handle interpretation assignements
-  // TODO: merge terms and ops into a push/pop automaton
-
   let first_term_ops: Vec<Operator> = handle_unary_operators(tree.clone(), offset);
   let mut offset2 = *offset;
   let first_term = construct_non_expression(tree.clone(), &mut offset2);
@@ -145,7 +142,6 @@ fn append_term<'a, 'b>(
   termops: Vec<Operator>
 ) {
   /*! Appends a term to the terms array of an expression. If `term` is an expression, it gets squashed, otherwise, `term` is simply added to `terms`. */
-  // TODO: tuples!
   match term {
     Some((ASTNode::Expression(mut subexpr), _loc)) => {
       terms.append(&mut subexpr.terms);
@@ -209,7 +205,6 @@ fn handle_interpretation_definition<'a>(
   op_loc: Location<'a>,
   define_loc: Location<'a>
 ) -> Option<(ASTNode<'a>, Location<'a>)> {
-  // TODO: TypeNames in ASTNode + verify that first term is a typename
   if let ASTNode::TypeName(from2) = from {
     if let (Token::TypeName(to), _) = tree.tokens[*offset + 1].clone() {
       if tree.tokens.len() <= *offset + 3 {

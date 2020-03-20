@@ -13,6 +13,7 @@ pub enum ASTNode<'a> {
   TypeName(token::TypeName),
   VariableDecl(String),
   VariableInit(String, Box<ASTNode<'a>>),
+  VariableDef(String, Box<ASTNode<'a>>),
   Boolean(bool),
   Number(f64),
   String(String),
@@ -62,6 +63,7 @@ impl<'a> ASTNode<'a> {
       ASTNode::PatternDecl(_)
       | ASTNode::Interpretation(_, _, _)
       | ASTNode::VariableDecl(_)
+      | ASTNode::VariableDef(_, _)
       | ASTNode::VariableInit(_, _) => true,
       _ => false,
     }

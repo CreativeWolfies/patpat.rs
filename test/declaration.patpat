@@ -7,3 +7,6 @@
 A -> B: {
 
 }
+
+let a: 4
+a: 3 // technically not a declaration

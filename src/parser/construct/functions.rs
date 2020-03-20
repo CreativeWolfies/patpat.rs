@@ -45,7 +45,7 @@ pub fn construct_pattern_call<'a>(tree: Rc<TokenTree<'a>>, offset: &mut usize) -
   if let Token::Pattern(name) = &tree.tokens[*offset].0 {
     if tree.tokens.len() == *offset + 1 {return None}
     if let Token::Tuple(t) = &tree.tokens[*offset + 1].0 {
-      let args = AST::parse(t.clone(), ASTKind::ArgTuple);
+      let args = AST::parse(t.clone(), ASTKind::Tuple);
       let location = tree.tokens[*offset].1.clone();
       *offset += 2;
       return Some((ASTNode::PatternCall(name.to_string(), args), location));

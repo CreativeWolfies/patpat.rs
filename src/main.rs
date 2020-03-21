@@ -6,6 +6,7 @@ pub mod error;
 pub mod ast;
 pub mod location;
 pub use location::Location;
+use ast::resolve;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -24,13 +25,20 @@ fn main() {
         path: args[1].to_string(),
         contents: raw
     };
+
     let parsed = parser::parse(&src_file);
     if let Some(_) = args.iter().find(|x| **x == String::from("--dump-parsed")) {
         println!("{:#?}", parsed);
     }
+
     let constructed = parser::construct(parsed);
     if let Some(_) = args.iter().find(|x| **x == String::from("--dump-constructed")) {
         println!("{:#?}", constructed);
+    }
+
+    let resolved = resolve::resolve(constructed);
+    if let Some(_) = args.iter().find(|x| **x == String::from("--dump-resolved")) {
+        println!("{:#?}", resolved.borrow());
     }
 }
 

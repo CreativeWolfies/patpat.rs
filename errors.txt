@@ -25,3 +25,5 @@
 105: #self() in standalone function
 106: Duplicate #lhs()
 107: No operator precedence
+
+151: Unkown symbol

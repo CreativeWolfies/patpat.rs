@@ -45,7 +45,6 @@ impl<'a> Token<'a> {
                             format!("Invalid number literal: {} ({})", caps.get(0).unwrap().as_str(), e),
                             CompLocation::from(loc)
                         ).print_and_exit();
-                        0.0
                     }
                 }
             ),

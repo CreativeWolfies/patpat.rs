@@ -90,13 +90,12 @@ fn lookup_symbol<'a, 'b>(name: String, loc: Location<'b>, variables: &'b Vec<Rc<
         String::from("Unknown symbol: couldn't resolve it"),
         CompLocation::from(loc)
       ).print_and_exit();
-      panic!(); // outgoing branch
     }
   }
 }
 
 #[allow(unused_variables)]
 #[allow(dead_code)]
-fn lookup_pattern<'a, 'b>(name: String, patterns: &'b Vec<Rc<RefCell<Pattern<'a>>>>, parent: Option<Rc<RefCell<RAST<'a>>>>) -> Rc<RefCell<Pattern<'a>>> {
+fn lookup_pattern<'a, 'b>(name: String, loc: Location<'b>, patterns: &'b Vec<Rc<RefCell<Pattern<'a>>>>, parent: Option<Rc<RefCell<RAST<'a>>>>) -> Rc<RefCell<Pattern<'a>>> {
   panic!("Pattern lookup is unimplemented!");
 }

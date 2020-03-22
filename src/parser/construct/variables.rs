@@ -56,7 +56,6 @@ pub fn construct_variable_declaration<'a>(
               String::from("Invalid term in variable definition"),
               CompLocation::from(expr.1)
             ).print_and_exit();
-            panic!(); // outgoing branch
           }
 
           return Some((
@@ -106,7 +105,6 @@ pub fn construct_variable_definition<'a>(
             String::from("Invalid term in variable definition"),
             CompLocation::from(expr.1)
           ).print_and_exit();
-          panic!(); // outgoing branch
         }
 
         return Some((

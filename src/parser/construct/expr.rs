@@ -239,5 +239,4 @@ fn handle_interpretation_definition<'a>(
       CompLocation::from(&tree.tokens[*offset - 1].1)
     ).print_and_exit();
   }
-  None
 }

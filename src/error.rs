@@ -54,9 +54,9 @@ impl<'a> CompError<'a> {
         self
     }
 
-    pub fn print_and_exit(self) {
+    pub fn print_and_exit(self) -> ! {
         eprintln!("{}", &self);
-        std::process::exit(self.exit_code);
+        std::process::exit(self.exit_code)
     }
 }
 

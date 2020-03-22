@@ -59,8 +59,6 @@ impl<'a> Function<'a> {
                     }
                   }
                   err.print_and_exit();
-
-                  break; // required for rust to understand that this is an outgoing branch of the for loop (otherwise "visited" gets consumed several times)
                 } else if !is_pattern {
                   CompError::new(
                     105,
@@ -89,8 +87,6 @@ impl<'a> Function<'a> {
                     }
                   }
                   err.print_and_exit();
-
-                  break; // required for rust to understand that this is an outgoing branch of the for loop (otherwise "visited" gets consumed several times)
                 } else {
                   has_lhs = true;
                 }
@@ -100,7 +96,6 @@ impl<'a> Function<'a> {
                   String::from("Invalid argument in function definition: unrecognized pattern"),
                   CompLocation::from(location)
                 ).print_and_exit();
-                break;
               }
             },
             _ => {
@@ -109,7 +104,6 @@ impl<'a> Function<'a> {
                 String::from("Invalid argument in function definition"),
                 CompLocation::from(location)
               ).print_and_exit();
-              break;
             }
           }
           visited.push((raw_arg, location));

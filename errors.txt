@@ -26,4 +26,5 @@
 106: Duplicate #lhs()
 107: No operator precedence
 
-151: Unkown symbol
+151: Unknown symbol
+152: Unknown pattern

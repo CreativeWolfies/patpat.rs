@@ -1,7 +1,6 @@
 pub mod node;
 pub mod function;
 pub mod pattern;
-pub mod symbol;
 pub mod expr;
 pub mod resolve;
 

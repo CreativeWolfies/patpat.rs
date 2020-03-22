@@ -1,13 +1,25 @@
-pub use super::*;
-pub use super::symbol::Symbol;
-use std::cell::RefCell;
+pub mod symbol;
+pub mod pattern;
+pub mod function;
+pub mod lookup;
+pub mod node;
 
-#[derive(Debug)]
+pub use super::*;
+pub use symbol::*;
+pub use pattern::*;
+pub use function::*;
+pub use lookup::*;
+pub use node::*;
+use std::cell::RefCell;
+use std::rc::Weak;
+use std::fmt;
+
 #[derive(Clone)]
 pub struct RAST<'a> { // resolved AST
   pub instructions: Vec<(RASTNode<'a>, Location<'a>)>,
-  pub parent: Option<Rc<RefCell<RAST<'a>>>>,
-  pub variables: Vec<Rc<RefCell<Symbol<'a>>>>,
+  pub parent: Option<Weak<RefCell<RAST<'a>>>>,
+  pub variables: Vec<Rc<RefCell<RSymbol<'a>>>>,
+  pub patterns: Vec<Rc<RefCell<RPattern<'a>>>>,
 }
 
 pub fn resolve<'a>(ast: AST<'a>) -> Rc<RefCell<RAST<'a>>> {
@@ -15,32 +27,54 @@ pub fn resolve<'a>(ast: AST<'a>) -> Rc<RefCell<RAST<'a>>> {
 }
 
 impl<'a> RAST<'a> {
-  pub fn new(parent: Option<Rc<RefCell<RAST<'a>>>>) -> RAST<'a> {
+  pub fn new(parent: Option<Weak<RefCell<RAST<'a>>>>) -> RAST<'a> {
     RAST {
       instructions: Vec::new(),
       parent,
-      variables: Vec::new()
+      variables: Vec::new(),
+      patterns: Vec::new(),
     }
   }
 
-  pub fn resolve(ast: AST<'a>, parent: Option<Rc<RefCell<RAST<'a>>>>) -> Rc<RefCell<RAST<'a>>> {
-    let res = Rc::new(RefCell::new(RAST {
-      instructions: Vec::new(),
-      parent: parent.clone(),
-      variables: Vec::new(),
-    }));
+  pub fn resolve(ast: AST<'a>, parent: Option<Weak<RefCell<RAST<'a>>>>) -> Rc<RefCell<RAST<'a>>> {
+    let res = Rc::new(RefCell::new(RAST::new(parent.clone())));
+
+    for instruction in ast.instructions.iter() {
+      // first pass: find symbols and patterns
+      match &instruction.0 {
+        ASTNode::VariableDecl(name)
+        | ASTNode::VariableInit(name, _) =>
+          res.borrow_mut().variables.push(Rc::new(RefCell::new(RSymbol::new(name.clone())))),
+        ASTNode::PatternDecl(p) =>
+          res.borrow_mut().patterns.push(Rc::new(RefCell::new(RPattern::new(p.name.clone())))),
+        _ => {}
+      }
+    }
 
     for instruction in ast.instructions.into_iter() {
-      match instruction {
-        (ASTNode::VariableDecl(name), _) => res.borrow_mut().variables.push(Rc::new(RefCell::new(Symbol::new(name)))),
-        (ASTNode::VariableInit(name, expr), loc) => {
-          let s = Rc::new(RefCell::new(Symbol::new(name)));
-          res.borrow_mut().variables.push(s.clone());
+      // second pass: resolve instructions
+      let loc = instruction.1;
+      match instruction.0 {
+        ASTNode::VariableInit(name, expr) => {
+          let s = lookup_symbol(name, loc.clone(), &res.borrow().variables, parent.clone());
           res.borrow_mut().instructions.push((
-            RASTNode::VariableDef(s, Rc::new(RAST::resolve_node((*expr, loc.clone()), parent.clone()))),
+            RASTNode::VariableDef(
+              s,
+              Rc::new(RAST::resolve_node((*expr, loc.clone()), parent.clone()))
+            ),
             loc
           ));
         },
+        ASTNode::PatternDecl(p) => {
+          let pat = lookup_pattern(p.name, loc, &res.borrow().patterns, parent.clone());
+          let function = RFunction::from((p.function, Rc::downgrade(&res)));
+          pat.borrow_mut().function = Some(function);
+        },
+        ASTNode::PatternCall(name, args) => {
+          let pat = lookup_pattern(name, loc.clone(), &res.borrow().patterns, parent.clone());
+          let args = RAST::resolve(args, Some(Rc::downgrade(&res)));
+          res.borrow_mut().instructions.push((RASTNode::PatternCall(pat, args), loc));
+        }
         _ => {}
       }
     }
@@ -48,10 +82,10 @@ impl<'a> RAST<'a> {
     res
   }
 
-  pub fn resolve_node(node: (ASTNode<'a>, Location<'a>), parent: Option<Rc<RefCell<RAST<'a>>>>) -> RefCell<RAST<'a>> {
+  pub fn resolve_node(node: (ASTNode<'a>, Location<'a>), parent: Option<Weak<RefCell<RAST<'a>>>>) -> RefCell<RAST<'a>> {
     match node {
       (ASTNode::VariableDef(name, expr), loc) => {
-        let variables: Vec<Rc<RefCell<Symbol>>> = Vec::new();
+        let variables: Vec<Rc<RefCell<RSymbol>>> = Vec::new();
         RefCell::new(RAST {
           instructions: vec![(RASTNode::VariableDef(
             lookup_symbol(name, loc.clone(), &variables, parent.clone()),
@@ -59,6 +93,7 @@ impl<'a> RAST<'a> {
           ), loc)],
           parent: parent.clone(),
           variables,
+          patterns: Vec::new(),
         })
       },
       _ => RefCell::new(RAST::new(parent))
@@ -66,36 +101,12 @@ impl<'a> RAST<'a> {
   }
 }
 
-#[derive(Debug)]
-#[derive(Clone)]
-pub enum RASTNode<'a> { // resolved AST node
-  PatternCall(Rc<Pattern<'a>>, Rc<RefCell<RAST<'a>>>),
-  VariableDef(Rc<RefCell<Symbol<'a>>>, Rc<RefCell<RAST<'a>>>),
-}
-
-// TODO: Support #use and #load
-fn lookup_symbol<'a, 'b>(name: String, loc: Location<'b>, variables: &'b Vec<Rc<RefCell<Symbol<'a>>>>, parent: Option<Rc<RefCell<RAST<'a>>>>) -> Rc<RefCell<Symbol<'a>>> {
-  for var in variables {
-    if var.borrow().name == name {
-      return var.clone(); // move out of 'b
-    }
+impl<'a> fmt::Debug for RAST<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    f.debug_struct("RAST")
+      .field("instructions", &self.instructions)
+      .field("patterns", &self.patterns)
+      .field("variables", &self.variables)
+      .finish() // TODO: finish_non_exhaustive() when it becomes standardized
   }
-  match parent {
-    Some(p) => {
-      lookup_symbol(name, loc.clone(), &p.borrow().variables, p.borrow().parent.clone())
-    }
-    None => {
-      CompError::new(
-        151,
-        String::from("Unknown symbol: couldn't resolve it"),
-        CompLocation::from(loc)
-      ).print_and_exit();
-    }
-  }
-}
-
-#[allow(unused_variables)]
-#[allow(dead_code)]
-fn lookup_pattern<'a, 'b>(name: String, loc: Location<'b>, patterns: &'b Vec<Rc<RefCell<Pattern<'a>>>>, parent: Option<Rc<RefCell<RAST<'a>>>>) -> Rc<RefCell<Pattern<'a>>> {
-  panic!("Pattern lookup is unimplemented!");
 }

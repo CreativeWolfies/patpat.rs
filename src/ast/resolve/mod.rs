@@ -12,22 +12,22 @@ pub use lookup::*;
 pub use node::*;
 use std::cell::RefCell;
 use std::rc::Weak;
-use std::fmt;
 
 #[derive(Clone)]
+#[derive(Debug)]
 pub struct RAST<'a> { // resolved AST
   pub instructions: Vec<(RASTNode<'a>, Location<'a>)>,
-  pub parent: Option<Weak<RefCell<RAST<'a>>>>,
+  pub parent: Weak<RefCell<RAST<'a>>>,
   pub variables: Vec<Rc<RefCell<RSymbol<'a>>>>,
   pub patterns: Vec<Rc<RefCell<RPattern<'a>>>>,
 }
 
 pub fn resolve<'a>(ast: AST<'a>) -> Rc<RefCell<RAST<'a>>> {
-  RAST::resolve(ast, None)
+  RAST::resolve(ast, Weak::new())
 }
 
 impl<'a> RAST<'a> {
-  pub fn new(parent: Option<Weak<RefCell<RAST<'a>>>>) -> RAST<'a> {
+  pub fn new(parent: Weak<RefCell<RAST<'a>>>) -> RAST<'a> {
     RAST {
       instructions: Vec::new(),
       parent,
@@ -36,7 +36,7 @@ impl<'a> RAST<'a> {
     }
   }
 
-  pub fn resolve(ast: AST<'a>, parent: Option<Weak<RefCell<RAST<'a>>>>) -> Rc<RefCell<RAST<'a>>> {
+  pub fn resolve(ast: AST<'a>, parent: Weak<RefCell<RAST<'a>>>) -> Rc<RefCell<RAST<'a>>> {
     let res = Rc::new(RefCell::new(RAST::new(parent.clone())));
 
     for instruction in ast.instructions.iter() {
@@ -72,7 +72,7 @@ impl<'a> RAST<'a> {
         },
         ASTNode::PatternCall(name, args) => {
           let pat = lookup_pattern(name, loc.clone(), &res.borrow().patterns, parent.clone());
-          let args = RAST::resolve(args, Some(Rc::downgrade(&res)));
+          let args = RAST::resolve(args, Rc::downgrade(&res));
           res.borrow_mut().instructions.push((RASTNode::PatternCall(pat, args), loc));
         }
         _ => {}
@@ -82,7 +82,7 @@ impl<'a> RAST<'a> {
     res
   }
 
-  pub fn resolve_node(node: (ASTNode<'a>, Location<'a>), parent: Option<Weak<RefCell<RAST<'a>>>>) -> RefCell<RAST<'a>> {
+  pub fn resolve_node(node: (ASTNode<'a>, Location<'a>), parent: Weak<RefCell<RAST<'a>>>) -> RefCell<RAST<'a>> {
     match node {
       (ASTNode::VariableDef(name, expr), loc) => {
         let variables: Vec<Rc<RefCell<RSymbol>>> = Vec::new();
@@ -98,15 +98,5 @@ impl<'a> RAST<'a> {
       },
       _ => RefCell::new(RAST::new(parent))
     }
-  }
-}
-
-impl<'a> fmt::Debug for RAST<'a> {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    f.debug_struct("RAST")
-      .field("instructions", &self.instructions)
-      .field("patterns", &self.patterns)
-      .field("variables", &self.variables)
-      .finish() // TODO: finish_non_exhaustive() when it becomes standardized
   }
 }

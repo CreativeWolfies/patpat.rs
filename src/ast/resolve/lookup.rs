@@ -1,19 +1,19 @@
 use super::*;
 
 // TODO: Support #use and #load
-pub fn lookup_symbol<'a, 'b>(name: String, loc: Location<'b>, variables: &'b Vec<Rc<RefCell<RSymbol<'a>>>>, parent: Option<Weak<RefCell<RAST<'a>>>>) -> Rc<RefCell<RSymbol<'a>>> {
+pub fn lookup_symbol<'a, 'b>(name: String, loc: Location<'b>, variables: &'b Vec<Rc<RefCell<RSymbol<'a>>>>, parent: Weak<RefCell<RAST<'a>>>) -> Rc<RefCell<RSymbol<'a>>> {
   for var in variables {
     if var.borrow().name == name {
       return var.clone(); // move out of 'b
     }
   }
-  match parent {
+  match parent.upgrade() {
     Some(p) => {
       lookup_symbol(
         name,
         loc.clone(),
-        &p.upgrade().unwrap().borrow().variables,
-        p.upgrade().unwrap().borrow().parent.clone()
+        &p.borrow().variables,
+        p.borrow().parent.clone()
       )
     }
     None => {
@@ -26,19 +26,19 @@ pub fn lookup_symbol<'a, 'b>(name: String, loc: Location<'b>, variables: &'b Vec
   }
 }
 
-pub fn lookup_pattern<'a, 'b>(name: String, loc: Location<'b>, patterns: &'b Vec<Rc<RefCell<RPattern<'a>>>>, parent: Option<Weak<RefCell<RAST<'a>>>>) -> Rc<RefCell<RPattern<'a>>> {
+pub fn lookup_pattern<'a, 'b>(name: String, loc: Location<'b>, patterns: &'b Vec<Rc<RefCell<RPattern<'a>>>>, parent: Weak<RefCell<RAST<'a>>>) -> Rc<RefCell<RPattern<'a>>> {
   for pat in patterns {
     if pat.borrow().name == name {
       return pat.clone(); // move out of 'b
     }
   }
-  match parent {
+  match parent.upgrade() {
     Some(p) => {
       lookup_pattern(
         name,
         loc.clone(),
-        &p.upgrade().unwrap().borrow().patterns,
-        p.upgrade().unwrap().borrow().parent.clone()
+        &p.borrow().patterns,
+        p.borrow().parent.clone()
       )
     }
     None => {

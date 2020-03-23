@@ -15,7 +15,7 @@ impl<'a> From<(Function<'a>, Weak<RefCell<RAST<'a>>>)> for RFunction<'a> {
     let ast = input.1;
     RFunction {
       args: function.args,
-      body: RAST::resolve(function.body, Some(ast)),
+      body: RAST::resolve(function.body, ast),
       has_lhs: function.has_lhs,
       has_self: function.has_self,
     }

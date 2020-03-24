@@ -13,20 +13,29 @@ pub use node::*;
 use std::cell::RefCell;
 use std::rc::Weak;
 
+
+/** Resolved abstract syntax tree (RAST): an AST referencing itself through its variables, functions, etc.
+This resolved AST has all of its variables, patterns, etc. resolved (ie. they all point to their value's respective memory location).
+RefCells are needed as these references may be neede to borrow the value mutably later.
+*/
 #[derive(Clone)]
 #[derive(Debug)]
-pub struct RAST<'a> { // resolved AST
+pub struct RAST<'a> {
   pub instructions: Vec<(RASTNode<'a>, Location<'a>)>,
   pub parent: Weak<RefCell<RAST<'a>>>,
   pub variables: Vec<Rc<RefCell<RSymbol<'a>>>>,
   pub patterns: Vec<Rc<RefCell<RPattern<'a>>>>,
 }
 
+/// Calls RAST::resolve, returns the root node of the corresponding tree
 pub fn resolve<'a>(ast: AST<'a>) -> Rc<RefCell<RAST<'a>>> {
   RAST::resolve(ast, Weak::new())
 }
 
 impl<'a> RAST<'a> {
+  /**
+    Creates a new, empty RAST instance with as parent `parent`.
+  */
   pub fn new(parent: Weak<RefCell<RAST<'a>>>) -> RAST<'a> {
     RAST {
       instructions: Vec::new(),
@@ -36,6 +45,12 @@ impl<'a> RAST<'a> {
     }
   }
 
+  /** Resolves the links within `ast`, returning a populated RAST.
+  Note that this function is recursive.
+
+  The resolution process has two phases: the first one (first pass) looks for declarations and registers them while the second one (second pass) registers the individual instructions to be carried out during runtime.
+
+  */
   pub fn resolve(ast: AST<'a>, parent: Weak<RefCell<RAST<'a>>>) -> Rc<RefCell<RAST<'a>>> {
     let res = Rc::new(RefCell::new(RAST::new(parent.clone())));
 
@@ -82,6 +97,10 @@ impl<'a> RAST<'a> {
     res
   }
 
+  /** Resolves an individual node
+
+  This is just a call to RAST::resolve (TODO)
+  */
   pub fn resolve_node(node: (ASTNode<'a>, Location<'a>), parent: Weak<RefCell<RAST<'a>>>) -> RefCell<RAST<'a>> {
     match node {
       (ASTNode::VariableDef(name, expr), loc) => {

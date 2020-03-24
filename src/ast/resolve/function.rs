@@ -10,12 +10,15 @@ pub struct RFunction<'a> {
 }
 
 impl<'a> From<(Function<'a>, Weak<RefCell<RAST<'a>>>)> for RFunction<'a> {
+  /**
+    Creates an RFunction off a Function and a parent RAST.
+  */
   fn from(input: (Function<'a>, Weak<RefCell<RAST<'a>>>)) -> RFunction<'a> {
     let function = input.0;
-    let ast = input.1;
+    let parent = input.1;
     RFunction {
       args: function.args,
-      body: RAST::resolve(function.body, ast),
+      body: RAST::resolve(function.body, parent),
       has_lhs: function.has_lhs,
       has_self: function.has_self,
     }

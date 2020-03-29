@@ -9,11 +9,11 @@ pub struct RFunction<'a> {
   pub has_lhs: bool,
 }
 
-impl<'a> From<(Function<'a>, Weak<RefCell<RAST<'a>>>)> for RFunction<'a> {
+impl<'a> From<(Function<'a>, RASTWeak<'a>)> for RFunction<'a> {
   /**
     Creates an RFunction off a Function and a parent RAST.
   */
-  fn from(input: (Function<'a>, Weak<RefCell<RAST<'a>>>)) -> RFunction<'a> {
+  fn from(input: (Function<'a>, RASTWeak<'a>)) -> RFunction<'a> {
     let function = input.0;
     let parent = input.1;
     RFunction {

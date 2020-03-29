@@ -1,6 +1,7 @@
 use regex::Captures;
 use crate::{Location};
 use crate::error::*;
+use std::fmt;
 
 // tokens that will end up in the TokenTree
 #[derive(Debug)]
@@ -161,10 +162,22 @@ pub enum TypeStrictness {
     Strict
 }
 
-#[derive(Debug)]
 #[derive(Clone)]
+#[derive(PartialEq)]
 pub struct TypeName {
     pub name: String
+}
+
+impl fmt::Debug for TypeName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "TypeName({})", self.name)
+    }
+}
+
+impl fmt::Display for TypeName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
 }
 
 #[derive(Debug)]

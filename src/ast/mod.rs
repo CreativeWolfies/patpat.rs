@@ -4,7 +4,7 @@ pub mod pattern;
 pub mod expr;
 pub mod resolve;
 
-pub use super::parser::{token::{Type, Token, TokenTree}, construct, token};
+pub use super::parser::{token::{Type, Token, TokenTree, TypeName}, construct, token};
 pub use std::rc::Rc;
 pub use super::error::*;
 pub use crate::Location;

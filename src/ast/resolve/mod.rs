@@ -3,6 +3,7 @@ pub mod pattern;
 pub mod function;
 pub mod lookup;
 pub mod node;
+pub mod r#struct;
 
 pub use super::*;
 pub use symbol::*;
@@ -10,6 +11,7 @@ pub use pattern::*;
 pub use function::*;
 pub use lookup::*;
 pub use node::*;
+pub use r#struct::*;
 use std::cell::RefCell;
 use std::rc::Weak;
 
@@ -18,17 +20,24 @@ This resolved AST has all of its variables, patterns, etc. resolved (ie. they al
 RefCells are needed as these references may be neede to borrow the value mutably later.
 */
 
+pub type RSymRef<'a> = Rc<RefCell<RSymbol<'a>>>;
+pub type RPatRef<'a> = Rc<RefCell<RPattern<'a>>>;
+pub type RStructRef<'a> = Rc<RefCell<RStruct<'a>>>;
+pub type RASTRef<'a> = Rc<RefCell<RAST<'a>>>;
+pub type RASTWeak<'a> = Weak<RefCell<RAST<'a>>>;
+
 #[derive(Clone)]
 #[derive(Debug)]
 pub struct RAST<'a> {
   pub instructions: Vec<(RASTNode<'a>, Location<'a>)>,
-  pub parent: Weak<RefCell<RAST<'a>>>,
-  pub variables: Vec<Rc<RefCell<RSymbol<'a>>>>,
-  pub patterns: Vec<Rc<RefCell<RPattern<'a>>>>,
+  pub parent: RASTWeak<'a>,
+  pub variables: Vec<RSymRef<'a>>,
+  pub patterns: Vec<RPatRef<'a>>,
+  pub structs: Vec<RStructRef<'a>>,
 }
 
 /// Calls RAST::resolve, returns the root node of the corresponding tree
-pub fn resolve<'a>(ast: AST<'a>) -> Rc<RefCell<RAST<'a>>> {
+pub fn resolve<'a>(ast: AST<'a>) -> RASTRef {
   RAST::resolve(ast, Weak::new())
 }
 
@@ -36,12 +45,13 @@ impl<'a> RAST<'a> {
   /**
     Creates a new, empty RAST instance with as parent `parent`.
   */
-  pub fn new(parent: Weak<RefCell<RAST<'a>>>) -> RAST<'a> {
+  pub fn new(parent: RASTWeak<'a>) -> RAST<'a> {
     RAST {
       instructions: Vec::new(),
       parent,
       variables: Vec::new(),
       patterns: Vec::new(),
+      structs: Vec::new(),
     }
   }
 
@@ -51,7 +61,7 @@ impl<'a> RAST<'a> {
   The resolution process has two phases: the first one (first pass) looks for declarations and registers them while the second one (second pass) registers the individual instructions to be carried out during runtime.
 
   */
-  pub fn resolve(ast: AST<'a>, parent: Weak<RefCell<RAST<'a>>>) -> Rc<RefCell<RAST<'a>>> {
+  pub fn resolve(ast: AST<'a>, parent: RASTWeak<'a>) -> RASTRef<'a> {
     let res = Rc::new(RefCell::new(RAST::new(parent.clone())));
 
     for instruction in ast.instructions.iter() {
@@ -62,6 +72,8 @@ impl<'a> RAST<'a> {
           res.borrow_mut().variables.push(Rc::new(RefCell::new(RSymbol::new(name.clone())))),
         ASTNode::PatternDecl(p) =>
           res.borrow_mut().patterns.push(Rc::new(RefCell::new(RPattern::new(p.name.clone())))),
+        ASTNode::Struct(name, _) =>
+          res.borrow_mut().structs.push(Rc::new(RefCell::new(RStruct::new(name.clone())))),
         _ => {}
       }
     }
@@ -89,7 +101,11 @@ impl<'a> RAST<'a> {
           let pat = lookup_pattern(name, loc.clone(), &res.borrow().patterns, parent.clone());
           let args = RAST::resolve(args, Rc::downgrade(&res));
           res.borrow_mut().instructions.push((RASTNode::PatternCall(pat, args), loc));
-        }
+        },
+        ASTNode::Struct(name, body) => {
+          let st = lookup_struct(name, loc.clone(), &res.borrow().structs, parent.clone());
+          st.borrow_mut().context = Some(RAST::resolve(body, Rc::downgrade(&res)));
+        },
         _ => {}
       }
     }
@@ -101,7 +117,7 @@ impl<'a> RAST<'a> {
 
   This is just a call to RAST::resolve (TODO)
   */
-  pub fn resolve_node(node: (ASTNode<'a>, Location<'a>), parent: Weak<RefCell<RAST<'a>>>) -> RefCell<RAST<'a>> {
+  pub fn resolve_node(node: (ASTNode<'a>, Location<'a>), parent: RASTWeak<'a>) -> RefCell<RAST<'a>> {
     match node {
       (ASTNode::VariableDef(name, expr), loc) => {
         let variables: Vec<Rc<RefCell<RSymbol>>> = Vec::new();
@@ -113,6 +129,7 @@ impl<'a> RAST<'a> {
           parent: parent.clone(),
           variables,
           patterns: Vec::new(),
+          structs: Vec::new(),
         })
       },
       _ => RefCell::new(RAST::new(parent))

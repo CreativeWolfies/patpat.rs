@@ -29,3 +29,4 @@
 
 151: Unknown symbol
 152: Unknown pattern
+153: Unknown struct

@@ -17,6 +17,7 @@
 17: Invalid term in variable declaration
 18: Invalid term in interpretation definition
 19: Invalid term in variable definition
+20: Invalid term in struct definition
 
 101: Unexpected ')'
 102: Unexpected '}'

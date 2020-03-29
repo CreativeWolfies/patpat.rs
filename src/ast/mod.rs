@@ -68,6 +68,7 @@ pub enum ASTKind {
   ArgTuple,
   Block,
   File,
+  Struct,
 }
 
 impl ASTKind {
@@ -98,6 +99,13 @@ impl ASTKind {
         CompError::new(
           14,
           String::from("Invalid source file instruction"),
+          CompLocation::from(node.1.clone())
+        ).print_and_exit();
+      },
+      ASTKind::Struct => if !node.0.is_valid_struct_term() {
+        CompError::new(
+          14,
+          String::from("Invalid struct instruction"),
           CompLocation::from(node.1.clone())
         ).print_and_exit();
       },

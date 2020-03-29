@@ -10,3 +10,7 @@ A -> B: {
 
 let a: 4
 a: (b: 3) // technically not a declaration
+
+A: struct {
+  let x
+}

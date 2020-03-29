@@ -13,11 +13,11 @@ pub use node::*;
 use std::cell::RefCell;
 use std::rc::Weak;
 
-
 /** Resolved abstract syntax tree (RAST): an AST referencing itself through its variables, functions, etc.
 This resolved AST has all of its variables, patterns, etc. resolved (ie. they all point to their value's respective memory location).
 RefCells are needed as these references may be neede to borrow the value mutably later.
 */
+
 #[derive(Clone)]
 #[derive(Debug)]
 pub struct RAST<'a> {

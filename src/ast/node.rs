@@ -20,6 +20,7 @@ pub enum ASTNode<'a> {
   Expression(Expression<'a>),
   Tuple(AST<'a>),
   Interpretation(token::TypeName, token::TypeName, AST<'a>), // from, to, body
+  Struct(token::TypeName, AST<'a>), // name, body
   Nil,
 }
 
@@ -73,6 +74,18 @@ impl<'a> ASTNode<'a> {
     if self.is_valid_block_term() {
       return true;
     }
-    return false;
+    match self {
+      ASTNode::Struct(_, _) => true,
+      _ => false,
+    }
+  }
+
+  pub fn is_valid_struct_term(&self) -> bool {
+    match self {
+      ASTNode::PatternDecl(_)
+      | ASTNode::VariableDecl(_)
+      | ASTNode::VariableInit(_, _) => true,
+      _ => false,
+    }
   }
 }

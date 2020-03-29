@@ -26,6 +26,7 @@
 105: #self() in standalone function
 106: Duplicate #lhs()
 107: No operator precedence
+108: Cannot define this kind of expression
 
 151: Unknown symbol
 152: Unknown pattern

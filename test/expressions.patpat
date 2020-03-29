@@ -7,3 +7,5 @@ true && false && 1
 'pat() + 1
 
 (1 - 2) * !true * false
+
+a.'pat()

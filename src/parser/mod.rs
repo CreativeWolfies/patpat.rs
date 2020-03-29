@@ -234,7 +234,7 @@ fn match_next_term<'a>(
     res
 }
 
-pub const MATCHERS: [(token::Kind, &str); 22] = [
+pub const MATCHERS: [(token::Kind, &str); 21] = [
     (token::Kind::Boolean, "^(true|false)"),
     (token::Kind::Let, "^let"),
     (token::Kind::Struct, "^struct"),
@@ -249,8 +249,7 @@ pub const MATCHERS: [(token::Kind, &str); 22] = [
     (token::Kind::TupleEnd, "^\\)"),
     (token::Kind::Number, "^-?\\d+(?:\\.\\d*)?[\\w.]*"), // intentionally loose
     (token::Kind::Arrow, "^=>"),
-    (token::Kind::Operator, "^(->|>=|<=|==|!=|&&|\\|\\||[!+\\-/*<>%])"),
-    (token::Kind::MemberAccessor, "^\\."),
+    (token::Kind::Operator, "^(->|\\.|>=|<=|==|!=|&&|\\|\\||[!+\\-/*<>%])"),
     (token::Kind::Type, "^<\\s*([!~]?)\\s*([A-Z][\\w_\\d]*|number|bool|string|function)\\s*>"),
     (token::Kind::TypeName, "^[A-Z][\\w_\\d]*"),
     (token::Kind::BlockStart, "^\\{"),

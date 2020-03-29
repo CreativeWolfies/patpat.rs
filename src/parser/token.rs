@@ -20,7 +20,6 @@ pub enum Token<'a> {
     Number(f64),
     Arrow,
     Operator(Operator),
-    MemberAccessor,
     Type(Type),
     TypeName(TypeName),
     String(String),
@@ -50,7 +49,6 @@ impl<'a> Token<'a> {
                 }
             ),
             Kind::Arrow => Token::Arrow,
-            Kind::MemberAccessor => Token::MemberAccessor,
             Kind::TypeName => Token::TypeName(TypeName {
                 name: String::from(caps.get(0).unwrap().as_str())
             }),
@@ -79,6 +77,7 @@ impl<'a> Token<'a> {
                     "*" => Operator::Mul,
                     "/" => Operator::Div,
                     "%" => Operator::Mod,
+                    "." => Operator::MemberAccessor,
                     _ => {
                         eprintln!("Unknown operator: {:?}", caps.get(1).unwrap().as_str());
                         std::process::exit(1);
@@ -137,7 +136,6 @@ pub enum Kind {
     Number,
     Arrow,
     Operator,
-    MemberAccessor,
     Type,
     TypeName,
     BlockStart,
@@ -186,6 +184,7 @@ impl fmt::Display for TypeName {
 #[derive(PartialEq)]
 pub enum Operator {
     Interpretation,
+    MemberAccessor,
     Gt,
     Gte,
     Lt,

@@ -3,6 +3,7 @@ use crate::{Location, error::{CompError, CompLocation}};
 use std::rc::Rc;
 
 // Constructs expressions (yay!)
+// TODO: handle <define> at start of instruction
 
 pub fn construct_expression<'a>(
   tree: Rc<TokenTree<'a>>,
@@ -64,17 +65,7 @@ pub fn construct_expression<'a>(
           if main_op != op { // mixed operators
             if op.is_unary() {break}
 
-            CompError::new(
-              107,
-              String::from("PatPat does not support operator precedence"),
-              CompLocation::from(loc.clone())
-            ).append(
-              String::from("the main operator is defined here"),
-              CompLocation::from(main_loc.clone())
-            ).append(
-              String::from("consider using parentheses to separate both operators"),
-              CompLocation::None
-            ).print_and_exit();
+            err_op_precedence(loc, main_loc);
           } else if tree.tokens.len() == offset2 + 1 { // operator missing next term
             CompError::new(
               8,
@@ -87,7 +78,24 @@ pub fn construct_expression<'a>(
 
           let term_ops: Vec<Operator> = handle_unary_operators(tree.clone(), &mut offset2);
 
-          let res = construct_non_expression(tree.clone(), &mut offset2).unwrap_or_else(|| panic!("Unimplemented"));
+          // Handle <expresssion> <define> <expression>
+          if tree.tokens.len() > offset2 + 1 {
+            if let (Token::Define, _) = &tree.tokens[offset2 + 1] {
+              if term_ops.len() > 0 {
+                CompError::new(
+                  108,
+                  String::from("Unexpected unary operator(s) preceding define"),
+                  CompLocation::from(&tree.tokens[offset2 - 1].1)
+                ).print_and_exit();
+              }
+              *offset = offset2; // term hasn't been parsed yet
+              return handle_definition(tree, offset, terms, main_loc, op);
+            }
+          }
+
+          let mut res = construct_non_expression(tree.clone(), &mut offset2).unwrap_or_else(|| panic!("Unimplemented"));
+
+          // Operator-specific rules
           if let Operator::Interpretation = op {
             if term_ops.len() > 0 {
               CompError::new(
@@ -103,6 +111,18 @@ pub fn construct_expression<'a>(
                 String::from("Expected TypeName in casting expression"),
                 CompLocation::from(&res.1)
               ).print_and_exit();
+            }
+          } else if let Operator::MemberAccessor = op {
+            if let (ASTNode::PatternCall(name, body), call_loc) = res {
+              if term_ops.len() == 0 {
+                if let (Token::Pattern(_), _) = &tree.tokens[offset2 - 2] {
+                  res = (ASTNode::MethodCall(name.clone(), body), call_loc);
+                } else { // restitude `res`
+                  res = (ASTNode::PatternCall(name, body), call_loc);
+                }
+              } else {
+                res = (ASTNode::PatternCall(name, body), call_loc);
+              }
             }
           }
 
@@ -239,4 +259,40 @@ fn handle_interpretation_definition<'a>(
       CompLocation::from(&tree.tokens[*offset - 1].1)
     ).print_and_exit();
   }
+}
+
+fn handle_definition<'a>(
+  tree: Rc<TokenTree<'a>>,
+  offset: &mut usize,
+  terms: Vec<ExprTerm<'a>>,
+  loc: Location<'a>,
+  op: Operator,
+) -> Option<(ASTNode<'a>, Location<'a>)> {
+  if let Operator::MemberAccessor = op {
+    unimplemented!();
+  } else {
+    CompError::new(
+      108,
+      String::from("Cannot define this kind of expression"),
+      CompLocation::from(&tree.tokens[*offset - 1].1)
+    ).append(
+      String::from("Can only define expression with member accessors (.)"),
+      CompLocation::from(&tree.tokens[*offset - 1].1)
+    ).print_and_exit();
+  }
+  None
+}
+
+fn err_op_precedence(loc: Location<'_>, main_loc: Location<'_>) -> ! {
+  CompError::new(
+    107,
+    String::from("PatPat does not support operator precedence"),
+    CompLocation::from(loc.clone())
+  ).append(
+    String::from("the main operator is defined here"),
+    CompLocation::from(main_loc.clone())
+  ).append(
+    String::from("consider using parentheses to separate both operators"),
+    CompLocation::None
+  ).print_and_exit();
 }

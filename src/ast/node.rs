@@ -7,6 +7,7 @@ pub enum ASTNode<'a> {
   Function(Function<'a>),
   PatternDecl(Pattern<'a>),
   PatternCall(String, AST<'a>), // name, tuple
+  MethodCall(String, AST<'a>),
   Pattern(String),
   Variable(String),
   TypedVariable(String, Type),
@@ -30,6 +31,7 @@ impl<'a> ASTNode<'a> {
       ASTNode::Function(_)
       | ASTNode::Pattern(_)
       | ASTNode::PatternCall(_, _)
+      | ASTNode::MethodCall(_, _)
       | ASTNode::Variable(_)
       | ASTNode::Boolean(_)
       | ASTNode::Number(_)

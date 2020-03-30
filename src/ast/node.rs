@@ -15,6 +15,7 @@ pub enum ASTNode<'a> {
   VariableDecl(String),
   VariableInit(String, Box<ASTNode<'a>>),
   VariableDef(String, Box<ASTNode<'a>>),
+  ComplexDef(Expression<'a>, DefineMember<'a>, Box<ASTNode<'a>>),
   Boolean(bool),
   Number(f64),
   String(String),
@@ -40,6 +41,7 @@ impl<'a> ASTNode<'a> {
       | ASTNode::TypeName(_)
       | ASTNode::Nil
       | ASTNode::VariableDef(_, _)
+      | ASTNode::ComplexDef(_, _, _)
       | ASTNode::Expression(_) => true,
       _ => false,
     }

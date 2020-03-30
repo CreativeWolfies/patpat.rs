@@ -1,4 +1,4 @@
-use super::{ASTNode, ASTKind, AST, TokenTree, Token, ast::{Expression, ExprTerm}, token::{Operator}, construct_non_expression};
+use super::{ASTNode, ASTKind, AST, TokenTree, Token, ast::{Expression, ExprTerm, DefineMember}, token::{Operator}, construct_non_expression, construct, tuple};
 use crate::{Location, error::{CompError, CompLocation}};
 use std::rc::Rc;
 
@@ -268,8 +268,42 @@ fn handle_definition<'a>(
   loc: Location<'a>,
   op: Operator,
 ) -> Option<(ASTNode<'a>, Location<'a>)> {
+  /*! Handles complex definitions, ie. <expr> <define> <expr>
+  Called from `construct_expression`.
+  Checks that the operator is a valid operator (MemberAccessor), that the member assigned is a valid member (variable, number or tuple) and returns a ComplexDef.
+  */
   if let Operator::MemberAccessor = op {
-    unimplemented!();
+    let arg: DefineMember;
+    match &tree.tokens[*offset] {
+      (Token::Symbol(name), _) => {
+        *offset += 1;
+        arg = DefineMember::Variable(name.clone());
+      },
+      (Token::Number(num), _) => {
+        *offset += 1;
+        arg = DefineMember::Number(*num);
+      },
+      (Token::Tuple(_), _) => {
+        arg = DefineMember::Tuple(Box::new(tuple::construct_tuple(tree.clone(), offset).unwrap_or_else(|| panic!("Error while parsing tuple")).0));
+      },
+      (_, loc) => {
+        CompError::new(
+          108,
+          String::from("Invalid expression term to define: expected string, number or tuple"),
+          CompLocation::from(loc)
+        ).print_and_exit();
+      }
+    }
+
+    *offset += 1; // <define>
+
+    let value = construct(tree, offset).unwrap_or_else(|| unimplemented!());
+
+    Some((ASTNode::ComplexDef(
+      Expression {terms},
+      arg,
+      Box::new(value.0)
+    ), loc))
   } else {
     CompError::new(
       108,
@@ -280,7 +314,6 @@ fn handle_definition<'a>(
       CompLocation::from(&tree.tokens[*offset - 1].1)
     ).print_and_exit();
   }
-  None
 }
 
 fn err_op_precedence(loc: Location<'_>, main_loc: Location<'_>) -> ! {

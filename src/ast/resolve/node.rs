@@ -3,8 +3,13 @@ use std::fmt;
 
 #[derive(Clone)]
 pub enum RASTNode<'a> { // resolved AST node
-  PatternCall(Rc<RefCell<RPattern<'a>>>, Rc<RefCell<RAST<'a>>>),
-  VariableDef(Rc<RefCell<RSymbol<'a>>>, Rc<RefCell<RAST<'a>>>),
+  PatternCall(RPatRef<'a>, RASTRef<'a>),
+  VariableDef(RSymRef<'a>, RASTRef<'a>),
+  Function(RFunRef<'a>),
+  Pattern(RPatRef<'a>),
+  Variable(RSymRef<'a>),
+  Boolean(bool),
+  Number(f64),
 }
 
 impl<'a> fmt::Debug for RASTNode<'a> {
@@ -21,6 +26,27 @@ impl<'a> fmt::Debug for RASTNode<'a> {
           .field(&var.borrow().name)
           .field(&value.borrow())
           .finish()
+      },
+      RASTNode::Function(rfn) => {
+        f.debug_tuple("Function")
+          .field(&rfn.borrow())
+          .finish()
+      },
+      RASTNode::Pattern(rfn) => {
+        f.debug_tuple("Pattern")
+          .field(&rfn.borrow().name)
+          .finish()
+      },
+      RASTNode::Variable(var) => {
+        f.debug_tuple("Variable")
+          .field(&var.borrow().name)
+          .finish()
+      },
+      RASTNode::Boolean(b) => {
+        write!(f, "Boolean({})", b)
+      },
+      RASTNode::Number(x) => {
+        write!(f, "Number({})", x)
       }
     }
   }

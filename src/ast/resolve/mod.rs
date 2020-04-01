@@ -1,4 +1,4 @@
-pub mod symbol;
+pub mod variable;
 pub mod pattern;
 pub mod function;
 pub mod lookup;
@@ -6,7 +6,7 @@ pub mod node;
 pub mod r#struct;
 
 pub use super::*;
-pub use symbol::*;
+pub use variable::*;
 pub use pattern::*;
 pub use function::*;
 pub use lookup::*;
@@ -23,6 +23,7 @@ RefCells are needed as these references may be neede to borrow the value mutably
 pub type RSymRef<'a> = Rc<RefCell<RSymbol<'a>>>;
 pub type RPatRef<'a> = Rc<RefCell<RPattern<'a>>>;
 pub type RStructRef<'a> = Rc<RefCell<RStruct<'a>>>;
+pub type RFunRef<'a> = Rc<RefCell<RFunction<'a>>>;
 pub type RASTRef<'a> = Rc<RefCell<RAST<'a>>>;
 pub type RASTWeak<'a> = Weak<RefCell<RAST<'a>>>;
 
@@ -65,7 +66,7 @@ impl<'a> RAST<'a> {
     let res = Rc::new(RefCell::new(RAST::new(parent.clone())));
 
     for instruction in ast.instructions.iter() {
-      // first pass: find symbols and patterns
+      // first pass: find variables and patterns
       match &instruction.0 {
         ASTNode::VariableDecl(name)
         | ASTNode::VariableInit(name, _) =>
@@ -83,7 +84,7 @@ impl<'a> RAST<'a> {
       let loc = instruction.1;
       match instruction.0 {
         ASTNode::VariableInit(name, expr) => {
-          let s = lookup_symbol(name, loc.clone(), &res.borrow().variables, parent.clone());
+          let s = lookup_variable(name, loc.clone(), &res.borrow().variables, parent.clone());
           res.borrow_mut().instructions.push((
             RASTNode::VariableDef(
               s,
@@ -106,6 +107,33 @@ impl<'a> RAST<'a> {
           let st = lookup_struct(name, loc.clone(), &res.borrow().structs, parent.clone());
           st.borrow_mut().context = Some(RAST::resolve(body, Rc::downgrade(&res)));
         },
+        ASTNode::Function(function) => {
+          let rfn = RFunction::from((function, Rc::downgrade(&res)));
+          res.borrow_mut().instructions.push((
+            RASTNode::Function(Rc::new(RefCell::new(rfn))),
+            loc
+          ));
+        },
+        ASTNode::Pattern(name) => {
+          let pat = lookup_pattern(name, loc.clone(), &res.borrow().patterns, parent.clone());
+          res.borrow_mut().instructions.push((RASTNode::Pattern(pat), loc));
+        },
+        ASTNode::Variable(name) => {
+          let var = lookup_variable(name, loc.clone(), &res.borrow().variables, parent.clone());
+          res.borrow_mut().instructions.push((RASTNode::Variable(var), loc));
+        },
+        ASTNode::Boolean(b) => {
+          res.borrow_mut().instructions.push((
+            RASTNode::Boolean(b),
+            loc
+          ));
+        },
+        ASTNode::Number(num) => {
+          res.borrow_mut().instructions.push((
+            RASTNode::Number(num),
+            loc
+          ));
+        },
         _ => {}
       }
     }
@@ -123,7 +151,7 @@ impl<'a> RAST<'a> {
         let variables: Vec<Rc<RefCell<RSymbol>>> = Vec::new();
         RefCell::new(RAST {
           instructions: vec![(RASTNode::VariableDef(
-            lookup_symbol(name, loc.clone(), &variables, parent.clone()),
+            lookup_variable(name, loc.clone(), &variables, parent.clone()),
             Rc::new(RAST::resolve_node((*expr, loc.clone()), parent.clone()))
           ), loc)],
           parent: parent.clone(),

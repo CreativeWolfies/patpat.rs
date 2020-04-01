@@ -3,7 +3,7 @@ use super::*;
 #[derive(Debug)]
 #[derive(Clone)]
 pub struct RSymbol<'a> { // Only used during interpretation
-  pub value: SymbolValue<'a>,
+  pub value: SymbolValue<'a>, // TODO: remove
   pub name: String,
 }
 

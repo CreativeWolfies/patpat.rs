@@ -2,10 +2,10 @@ use super::*;
 
 // TODO: Support #use and #load
 
-/** Looks up a symbol in the RAST
+/** Looks up a variable in the RAST
   This function walks up through the RAST to find any a variable named `name`.
 */
-pub fn lookup_symbol<'a, 'b>(name: String, loc: Location<'b>, variables: &'b Vec<RSymRef<'a>>, parent: RASTWeak<'a>) -> RSymRef<'a> {
+pub fn lookup_variable<'a, 'b>(name: String, loc: Location<'b>, variables: &'b Vec<RSymRef<'a>>, parent: RASTWeak<'a>) -> RSymRef<'a> {
   for var in variables {
     if var.borrow().name == name {
       return var.clone(); // move out of 'b
@@ -13,7 +13,7 @@ pub fn lookup_symbol<'a, 'b>(name: String, loc: Location<'b>, variables: &'b Vec
   }
   match parent.upgrade() {
     Some(p) => {
-      lookup_symbol(
+      lookup_variable(
         name,
         loc.clone(),
         &p.borrow().variables,
@@ -23,7 +23,7 @@ pub fn lookup_symbol<'a, 'b>(name: String, loc: Location<'b>, variables: &'b Vec
     None => {
       CompError::new(
         151,
-        format!("Unknown symbol {}: couldn't resolve it", name),
+        format!("Unknown variable {}: couldn't resolve it", name),
         CompLocation::from(loc)
       ).print_and_exit();
     }

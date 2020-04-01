@@ -8,5 +8,11 @@ true && false && 1
 
 (1 - 2) * !true * false
 
+let a
+
 a.'pat()
 a.x: 3
+
+() => {3}
+
+true

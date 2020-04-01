@@ -81,86 +81,82 @@ impl<'a> RAST<'a> {
 
     for instruction in ast.instructions.into_iter() {
       // second pass: resolve instructions
-      let loc = instruction.1;
-      match instruction.0 {
-        ASTNode::VariableInit(name, expr) => {
-          let s = lookup_variable(name, loc.clone(), &res.borrow().variables, parent.clone());
+      let loc = instruction.1.clone();
+      let instruction = RAST::resolve_node(instruction, res.clone());
+      match instruction {
+        Some(i) => {
           res.borrow_mut().instructions.push((
-            RASTNode::VariableDef(
-              s,
-              Rc::new(RAST::resolve_node((*expr, loc.clone()), parent.clone()))
-            ),
+            i,
             loc
           ));
         },
-        ASTNode::PatternDecl(p) => {
-          let pat = lookup_pattern(p.name, loc, &res.borrow().patterns, parent.clone());
-          let function = RFunction::from((p.function, Rc::downgrade(&res)));
-          pat.borrow_mut().function = Some(function);
-        },
-        ASTNode::PatternCall(name, args) => {
-          let pat = lookup_pattern(name, loc.clone(), &res.borrow().patterns, parent.clone());
-          let args = RAST::resolve(args, Rc::downgrade(&res));
-          res.borrow_mut().instructions.push((RASTNode::PatternCall(pat, args), loc));
-        },
-        ASTNode::Struct(name, body) => {
-          let st = lookup_struct(name, loc.clone(), &res.borrow().structs, parent.clone());
-          st.borrow_mut().context = Some(RAST::resolve(body, Rc::downgrade(&res)));
-        },
-        ASTNode::Function(function) => {
-          let rfn = RFunction::from((function, Rc::downgrade(&res)));
-          res.borrow_mut().instructions.push((
-            RASTNode::Function(Rc::new(RefCell::new(rfn))),
-            loc
-          ));
-        },
-        ASTNode::Pattern(name) => {
-          let pat = lookup_pattern(name, loc.clone(), &res.borrow().patterns, parent.clone());
-          res.borrow_mut().instructions.push((RASTNode::Pattern(pat), loc));
-        },
-        ASTNode::Variable(name) => {
-          let var = lookup_variable(name, loc.clone(), &res.borrow().variables, parent.clone());
-          res.borrow_mut().instructions.push((RASTNode::Variable(var), loc));
-        },
-        ASTNode::Boolean(b) => {
-          res.borrow_mut().instructions.push((
-            RASTNode::Boolean(b),
-            loc
-          ));
-        },
-        ASTNode::Number(num) => {
-          res.borrow_mut().instructions.push((
-            RASTNode::Number(num),
-            loc
-          ));
-        },
-        _ => {}
+        None => {}
       }
     }
 
     res
   }
 
-  /** Resolves an individual node
-
-  This is just a call to RAST::resolve (TODO)
+  /** Resolves an individual node and optionally returns an instruction
   */
-  pub fn resolve_node(node: (ASTNode<'a>, Location<'a>), parent: RASTWeak<'a>) -> RefCell<RAST<'a>> {
-    match node {
-      (ASTNode::VariableDef(name, expr), loc) => {
-        let variables: Vec<Rc<RefCell<RSymbol>>> = Vec::new();
-        RefCell::new(RAST {
-          instructions: vec![(RASTNode::VariableDef(
-            lookup_variable(name, loc.clone(), &variables, parent.clone()),
-            Rc::new(RAST::resolve_node((*expr, loc.clone()), parent.clone()))
-          ), loc)],
-          parent: parent.clone(),
-          variables,
-          patterns: Vec::new(),
-          structs: Vec::new(),
-        })
+  pub fn resolve_node(node: (ASTNode<'a>, Location<'a>), res: RASTRef<'a>) -> Option<RASTNode<'a>> {
+    let loc = node.1;
+    let parent = res.borrow().parent.clone();
+    match node.0 {
+      ASTNode::VariableInit(name, expr)
+      | ASTNode::VariableDef(name, expr) => {
+        let s = lookup_variable(name, loc.clone(), &res.borrow().variables, parent.clone());
+        Some(
+          RASTNode::VariableDef(
+            s,
+            Box::new(
+              RAST::resolve_node((*expr, loc.clone()), res.clone())
+                .or(Some(RASTNode::Nil)).unwrap()
+            )
+          )
+        )
       },
-      _ => RefCell::new(RAST::new(parent))
+      ASTNode::PatternDecl(p) => {
+        let pat = lookup_pattern(p.name, loc, &res.borrow().patterns, parent.clone());
+        let function = RFunction::from((p.function, Rc::downgrade(&res)));
+        pat.borrow_mut().function = Some(function);
+        None
+      },
+      ASTNode::PatternCall(name, args) => {
+        let pat = lookup_pattern(name, loc.clone(), &res.borrow().patterns, parent.clone());
+        let args = RAST::resolve(args, Rc::downgrade(&res));
+        Some(RASTNode::PatternCall(pat, args))
+      },
+      ASTNode::Struct(name, body) => {
+        let st = lookup_struct(name, loc.clone(), &res.borrow().structs, parent.clone());
+        st.borrow_mut().context = Some(RAST::resolve(body, Rc::downgrade(&res)));
+        None
+      },
+      ASTNode::Function(function) => {
+        let rfn = RFunction::from((function, Rc::downgrade(&res)));
+        Some(
+          RASTNode::Function(Rc::new(RefCell::new(rfn)))
+        )
+      },
+      ASTNode::Pattern(name) => {
+        let pat = lookup_pattern(name, loc.clone(), &res.borrow().patterns, parent.clone());
+        Some(RASTNode::Pattern(pat))
+      },
+      ASTNode::Variable(name) => {
+        let var = lookup_variable(name, loc.clone(), &res.borrow().variables, parent.clone());
+        Some(RASTNode::Variable(var))
+      },
+      ASTNode::Boolean(b) => {
+        Some(
+          RASTNode::Boolean(b)
+        )
+      },
+      ASTNode::Number(num) => {
+        Some(
+          RASTNode::Number(num)
+        )
+      },
+      _ => None
     }
   }
 }

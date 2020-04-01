@@ -8,7 +8,9 @@ true && false && 1
 
 (1 - 2) * !true * false
 
-let a
+let a: true
+let b: false
+a: b: a
 
 a.'pat()
 a.x: 3

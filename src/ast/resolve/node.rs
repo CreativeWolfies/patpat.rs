@@ -10,6 +10,7 @@ pub enum RASTNode<'a> { // resolved AST node
   Variable(RSymRef),
   Expression(RExpression<'a>),
   Block(RASTRef<'a>),
+  Tuple(Vec<(RASTNode<'a>, Location<'a>)>),
   Boolean(bool),
   Number(f64),
   Nil,
@@ -53,6 +54,11 @@ impl<'a> fmt::Debug for RASTNode<'a> {
       RASTNode::Block(rast) => {
         f.debug_tuple("Block")
           .field(&rast)
+          .finish()
+      },
+      RASTNode::Tuple(vec) => {
+        f.debug_tuple("Tuple")
+          .field(&vec)
           .finish()
       },
       RASTNode::Boolean(b) => {

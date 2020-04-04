@@ -188,6 +188,17 @@ impl<'a> RAST<'a> {
           })
         )
       },
+      ASTNode::Tuple(ast) => {
+        let mut elements: Vec<(RASTNode<'a>, Location<'a>)> = Vec::with_capacity(ast.instructions.len());
+        for instruction in ast.instructions.into_iter() {
+          let loc = instruction.1.clone();
+          elements.push((RAST::resolve_node(instruction, res.clone()).unwrap_or(RASTNode::Nil), loc));
+        }
+        Some(
+          RASTNode::Tuple(elements)
+        )
+      },
+      ASTNode::Nil => Some(RASTNode::Nil),
       _ => None
     }
   }

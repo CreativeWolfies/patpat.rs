@@ -19,7 +19,8 @@ pub use variable::*;
 
 /** Resolved abstract syntax tree (RAST): an AST referencing itself through its variables, functions, etc.
 This resolved AST has all of its variables, patterns, etc. resolved (ie. they all point to their value's respective memory location).
-RefCells are needed as these references may be neede to borrow the value mutably later.
+
+TODO: cut down on RefCells
 */
 
 pub type RPatRef<'a> = Rc<RefCell<RPattern<'a>>>;
@@ -35,6 +36,7 @@ pub struct RAST<'a> {
     pub variables: Vec<Rc<RefCell<RSymbol>>>,
     pub patterns: Vec<RPatRef<'a>>,
     pub structs: Vec<RStructRef<'a>>,
+    pub depth: usize,
 }
 
 /** Calls RAST::resolve, returns the root node of the corresponding tree
@@ -51,10 +53,11 @@ impl<'a> RAST<'a> {
     pub fn new(parent: RASTWeak<'a>) -> RAST<'a> {
         RAST {
             instructions: Vec::new(),
-            parent,
+            parent: parent.clone(),
             variables: Vec::new(),
             patterns: Vec::new(),
             structs: Vec::new(),
+            depth: parent.upgrade().map(|p| p.borrow().depth + 1).unwrap_or(0),
         }
     }
 

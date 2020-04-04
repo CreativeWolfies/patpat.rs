@@ -11,28 +11,20 @@ pub fn lookup_variable<'a, 'b>(
     variables: &'b Vec<Rc<RefCell<RSymbol>>>,
     parent: RASTWeak<'a>,
 ) -> RSymRef {
-    lookup_variable_rec(name, loc, variables, parent, 0)
-}
-
-fn lookup_variable_rec<'a, 'b>(
-    name: String,
-    loc: Location<'b>,
-    variables: &'b Vec<Rc<RefCell<RSymbol>>>,
-    parent: RASTWeak<'a>,
-    depth: usize,
-) -> RSymRef {
     for var in variables {
         if var.borrow().name == name {
-            return RSymRef::new(var.clone(), depth);
+            return RSymRef::new(
+                var.clone(),
+                parent.upgrade().map(|p| p.borrow().depth + 1).unwrap_or(0)
+            );
         }
     }
     match parent.upgrade() {
-        Some(p) => lookup_variable_rec(
+        Some(p) => lookup_variable(
             name,
             loc.clone(),
             &p.borrow().variables,
             p.borrow().parent.clone(),
-            depth + 1,
         ),
         None => {
             CompError::new(

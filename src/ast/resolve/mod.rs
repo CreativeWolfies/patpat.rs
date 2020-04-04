@@ -4,6 +4,7 @@ pub mod function;
 pub mod lookup;
 pub mod node;
 pub mod r#struct;
+pub mod expr;
 
 pub use super::*;
 pub use variable::*;
@@ -12,6 +13,7 @@ pub use function::*;
 pub use lookup::*;
 pub use node::*;
 pub use r#struct::*;
+pub use expr::*;
 use std::cell::RefCell;
 use std::rc::Weak;
 
@@ -20,7 +22,6 @@ This resolved AST has all of its variables, patterns, etc. resolved (ie. they al
 RefCells are needed as these references may be neede to borrow the value mutably later.
 */
 
-pub type RSymRef<'a> = Rc<RefCell<RSymbol<'a>>>;
 pub type RPatRef<'a> = Rc<RefCell<RPattern<'a>>>;
 pub type RStructRef<'a> = Rc<RefCell<RStruct<'a>>>;
 pub type RFunRef<'a> = Rc<RefCell<RFunction<'a>>>;
@@ -32,12 +33,14 @@ pub type RASTWeak<'a> = Weak<RefCell<RAST<'a>>>;
 pub struct RAST<'a> {
   pub instructions: Vec<(RASTNode<'a>, Location<'a>)>,
   pub parent: RASTWeak<'a>,
-  pub variables: Vec<RSymRef<'a>>,
+  pub variables: Vec<Rc<RefCell<RSymbol>>>,
   pub patterns: Vec<RPatRef<'a>>,
   pub structs: Vec<RStructRef<'a>>,
 }
 
-/// Calls RAST::resolve, returns the root node of the corresponding tree
+/** Calls RAST::resolve, returns the root node of the corresponding tree
+* TODO: make it use a standard set of variables, structs, etc.
+*/
 pub fn resolve<'a>(ast: AST<'a>) -> RASTRef {
   RAST::resolve(ast, Weak::new())
 }
@@ -111,14 +114,14 @@ impl<'a> RAST<'a> {
             s,
             Box::new(
               RAST::resolve_node((*expr, loc.clone()), res.clone())
-                .or(Some(RASTNode::Nil)).unwrap()
+                .unwrap_or(RASTNode::Nil)
             )
           )
         )
       },
       ASTNode::PatternDecl(p) => {
-        let pat = lookup_pattern(p.name, loc, &res.borrow().patterns, parent.clone());
-        let function = RFunction::from((p.function, Rc::downgrade(&res)));
+        let pat = lookup_pattern(p.name, loc.clone(), &res.borrow().patterns, parent.clone());
+        let function = RFunction::from((p.function, Rc::downgrade(&res), loc));
         pat.borrow_mut().function = Some(function);
         None
       },
@@ -133,7 +136,7 @@ impl<'a> RAST<'a> {
         None
       },
       ASTNode::Function(function) => {
-        let rfn = RFunction::from((function, Rc::downgrade(&res)));
+        let rfn = RFunction::from((function, Rc::downgrade(&res), loc));
         Some(
           RASTNode::Function(Rc::new(RefCell::new(rfn)))
         )
@@ -154,6 +157,35 @@ impl<'a> RAST<'a> {
       ASTNode::Number(num) => {
         Some(
           RASTNode::Number(num)
+        )
+      },
+      ASTNode::Expression(expr) => {
+        let mut terms: Vec<RExprTerm<'a>> = Vec::with_capacity(expr.terms.len());
+        let mut depth: usize = 0;
+        let mut max_depth: usize = 0;
+        for term in expr.terms.into_iter() {
+          match term {
+            ExprTerm::Push(node, loc) => {
+              terms.push(RExprTerm::Push(
+                RAST::resolve_node((node, loc), res.clone())
+                  .unwrap_or(RASTNode::Nil)
+              ));
+              depth += 1;
+              if depth > max_depth {
+                max_depth = depth;
+              }
+            },
+            ExprTerm::Op(operator) => {
+              terms.push(RExprTerm::Op(operator));
+              depth -= 1;
+            }
+          }
+        }
+        Some(
+          RASTNode::Expression(RExpression {
+            terms,
+            max_depth
+          })
         )
       },
       _ => None

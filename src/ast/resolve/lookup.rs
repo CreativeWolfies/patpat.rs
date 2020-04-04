@@ -5,19 +5,30 @@ use super::*;
 /** Looks up a variable in the RAST
   This function walks up through the RAST to find any a variable named `name`.
 */
-pub fn lookup_variable<'a, 'b>(name: String, loc: Location<'b>, variables: &'b Vec<RSymRef<'a>>, parent: RASTWeak<'a>) -> RSymRef<'a> {
+pub fn lookup_variable<'a, 'b>(name: String, loc: Location<'b>, variables: &'b Vec<Rc<RefCell<RSymbol>>>, parent: RASTWeak<'a>) -> RSymRef {
+  lookup_variable_rec(name, loc, variables, parent, 0)
+}
+
+fn lookup_variable_rec<'a, 'b>(
+  name: String,
+  loc: Location<'b>,
+  variables: &'b Vec<Rc<RefCell<RSymbol>>>,
+  parent: RASTWeak<'a>,
+  depth: usize
+) -> RSymRef {
   for var in variables {
     if var.borrow().name == name {
-      return var.clone(); // move out of 'b
+      return RSymRef::new(var.clone(), depth);
     }
   }
   match parent.upgrade() {
     Some(p) => {
-      lookup_variable(
+      lookup_variable_rec(
         name,
         loc.clone(),
         &p.borrow().variables,
-        p.borrow().parent.clone()
+        p.borrow().parent.clone(),
+        depth + 1
       )
     }
     None => {

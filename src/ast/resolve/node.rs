@@ -4,10 +4,12 @@ use std::fmt;
 #[derive(Clone)]
 pub enum RASTNode<'a> { // resolved AST node
   PatternCall(RPatRef<'a>, RASTRef<'a>),
-  VariableDef(RSymRef<'a>, Box<RASTNode<'a>>),
+  VariableDef(RSymRef, Box<RASTNode<'a>>),
   Function(RFunRef<'a>),
   Pattern(RPatRef<'a>),
-  Variable(RSymRef<'a>),
+  Variable(RSymRef),
+  Expression(RExpression<'a>),
+  Block(RASTRef<'a>),
   Boolean(bool),
   Number(f64),
   Nil,
@@ -24,7 +26,7 @@ impl<'a> fmt::Debug for RASTNode<'a> {
       },
       RASTNode::VariableDef(var, value) => {
         f.debug_tuple("VariableDef")
-          .field(&var.borrow().name)
+          .field(&var.name)
           .field(&value)
           .finish()
       },
@@ -40,7 +42,17 @@ impl<'a> fmt::Debug for RASTNode<'a> {
       },
       RASTNode::Variable(var) => {
         f.debug_tuple("Variable")
-          .field(&var.borrow().name)
+          .field(&var.name)
+          .finish()
+      },
+      RASTNode::Expression(expr) => {
+        f.debug_tuple("Expression")
+          .field(&expr)
+          .finish()
+      },
+      RASTNode::Block(rast) => {
+        f.debug_tuple("Block")
+          .field(&rast)
           .finish()
       },
       RASTNode::Boolean(b) => {

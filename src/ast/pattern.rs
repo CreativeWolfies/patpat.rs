@@ -1,8 +1,7 @@
 use super::*;
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Pattern<'a> {
-  pub function: Function<'a>,
-  pub name: String,
+    pub function: Function<'a>,
+    pub name: String,
 }

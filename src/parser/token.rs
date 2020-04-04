@@ -1,11 +1,10 @@
-use regex::Captures;
-use crate::{Location};
 use crate::error::*;
+use crate::Location;
+use regex::Captures;
 use std::fmt;
 
 // tokens that will end up in the TokenTree
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum Token<'a> {
     Boolean(bool),
     Symbol(String),
@@ -31,26 +30,27 @@ impl<'a> Token<'a> {
         match matcher {
             Kind::Boolean => Token::Boolean(caps.get(1).unwrap().as_str() == "true"),
             Kind::Let => Token::Let,
-            Kind::Symbol => Token::Symbol(
-                String::from(caps.get(0).unwrap().as_str())
-            ),
+            Kind::Symbol => Token::Symbol(String::from(caps.get(0).unwrap().as_str())),
             Kind::Define => Token::Define,
             Kind::Pattern => Token::Pattern(String::from(caps.get(0).unwrap().as_str())),
-            Kind::Number => Token::Number(
-                match caps.get(0).unwrap().as_str().parse::<f64>() {
-                    Ok(v) => v,
-                    Err(e) => {
-                        CompError::new(
-                            6,
-                            format!("Invalid number literal: {} ({})", caps.get(0).unwrap().as_str(), e),
-                            CompLocation::from(loc)
-                        ).print_and_exit();
-                    }
+            Kind::Number => Token::Number(match caps.get(0).unwrap().as_str().parse::<f64>() {
+                Ok(v) => v,
+                Err(e) => {
+                    CompError::new(
+                        6,
+                        format!(
+                            "Invalid number literal: {} ({})",
+                            caps.get(0).unwrap().as_str(),
+                            e
+                        ),
+                        CompLocation::from(loc),
+                    )
+                    .print_and_exit();
                 }
-            ),
+            }),
             Kind::Arrow => Token::Arrow,
             Kind::TypeName => Token::TypeName(TypeName {
-                name: String::from(caps.get(0).unwrap().as_str())
+                name: String::from(caps.get(0).unwrap().as_str()),
             }),
             Kind::Type => Token::Type(Type {
                 name: String::from(caps.get(2).unwrap().as_str()),
@@ -58,32 +58,30 @@ impl<'a> Token<'a> {
                     "!" => TypeStrictness::Strict,
                     "~" => TypeStrictness::Loose,
                     _ => TypeStrictness::Normal,
+                },
+            }),
+            Kind::Operator => Token::Operator(match caps.get(1).unwrap().as_str() {
+                "->" => Operator::Interpretation,
+                "==" => Operator::Eq,
+                "!=" => Operator::Neq,
+                ">" => Operator::Gt,
+                ">=" => Operator::Gte,
+                "<" => Operator::Lt,
+                "<=" => Operator::Lte,
+                "!" => Operator::Not,
+                "&&" => Operator::And,
+                "||" => Operator::Or,
+                "+" => Operator::Add,
+                "-" => Operator::Sub,
+                "*" => Operator::Mul,
+                "/" => Operator::Div,
+                "%" => Operator::Mod,
+                "." => Operator::MemberAccessor,
+                _ => {
+                    eprintln!("Unknown operator: {:?}", caps.get(1).unwrap().as_str());
+                    std::process::exit(1);
                 }
             }),
-            Kind::Operator => Token::Operator(
-                match caps.get(1).unwrap().as_str() {
-                    "->" => Operator::Interpretation,
-                    "==" => Operator::Eq,
-                    "!=" => Operator::Neq,
-                    ">" => Operator::Gt,
-                    ">=" => Operator::Gte,
-                    "<" => Operator::Lt,
-                    "<=" => Operator::Lte,
-                    "!" => Operator::Not,
-                    "&&" => Operator::And,
-                    "||" => Operator::Or,
-                    "+" => Operator::Add,
-                    "-" => Operator::Sub,
-                    "*" => Operator::Mul,
-                    "/" => Operator::Div,
-                    "%" => Operator::Mod,
-                    "." => Operator::MemberAccessor,
-                    _ => {
-                        eprintln!("Unknown operator: {:?}", caps.get(1).unwrap().as_str());
-                        std::process::exit(1);
-                    }
-                }
-            ),
             Kind::Struct => Token::Struct,
             Kind::Load => Token::Load,
             Kind::Use => Token::Use,
@@ -91,13 +89,12 @@ impl<'a> Token<'a> {
             _ => {
                 eprintln!("Unknown token kind: {:?}", matcher);
                 std::process::exit(4);
-            },
+            }
         }
     }
 }
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TokenTree<'a> {
     pub tokens: Vec<(Token<'a>, Location<'a>)>,
     pub kind: Kind,
@@ -115,9 +112,7 @@ impl<'a> TokenTree<'a> {
 }
 
 // value-less tokens
-#[derive(Debug)]
-#[derive(Copy)]
-#[derive(Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum Kind {
     Boolean,
     Symbol,
@@ -145,25 +140,22 @@ pub enum Kind {
     Separator,
 }
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Type {
     pub name: String,
-    pub strictness: TypeStrictness
+    pub strictness: TypeStrictness,
 }
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum TypeStrictness {
     Loose,
     Normal,
-    Strict
+    Strict,
 }
 
-#[derive(Clone)]
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct TypeName {
-    pub name: String
+    pub name: String,
 }
 
 impl fmt::Debug for TypeName {
@@ -178,10 +170,7 @@ impl fmt::Display for TypeName {
     }
 }
 
-#[derive(Debug)]
-#[derive(Clone)]
-#[derive(Copy)]
-#[derive(PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Operator {
     Interpretation,
     MemberAccessor,

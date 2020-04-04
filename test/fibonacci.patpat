@@ -1,4 +1,7 @@
 // This prints the first 10 numbers of the fibonacci sequence
+#for: () => {}
+'println: () => {}
+
 #for(1, 10, (n) => {
   let a: 1
   let b: 1

@@ -1,12 +1,12 @@
-use std::fs;
 use std::env;
+use std::fs;
 use std::process;
-pub mod parser;
-pub mod error;
 pub mod ast;
+pub mod error;
 pub mod location;
-pub use location::Location;
+pub mod parser;
 use ast::resolve;
+pub use location::Location;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -23,7 +23,7 @@ fn main() {
     };
     let src_file = SrcFile {
         path: args[1].to_string(),
-        contents: raw
+        contents: raw,
     };
 
     let parsed = parser::parse(&src_file);
@@ -32,7 +32,10 @@ fn main() {
     }
 
     let constructed = parser::construct(parsed);
-    if let Some(_) = args.iter().find(|x| **x == String::from("--dump-constructed")) {
+    if let Some(_) = args
+        .iter()
+        .find(|x| **x == String::from("--dump-constructed"))
+    {
         println!("{:#?}", constructed);
     }
 

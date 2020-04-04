@@ -1,5 +1,5 @@
-use std::fmt;
 use crate::SrcFile;
+use std::fmt;
 
 #[derive(Clone)]
 pub struct Location<'a> {

@@ -1,9 +1,8 @@
 use super::*;
 
-#[derive(Clone)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum DefineMember<'a> {
-  Variable(String),
-  Number(f64),
-  Tuple(Box<ASTNode<'a>>)
+    Variable(String),
+    Number(f64),
+    Tuple(Box<ASTNode<'a>>),
 }

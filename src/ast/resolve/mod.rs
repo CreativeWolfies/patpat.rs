@@ -127,7 +127,12 @@ impl<'a> RAST<'a> {
             ASTNode::Interpretation(from, to, body) => {
                 let from = lookup_struct(from, loc.clone(), &res.borrow().structs, parent.clone());
                 let to = lookup_struct(to, loc.clone(), &res.borrow().structs, parent.clone());
-                from.borrow_mut().add_interpretation(Rc::downgrade(&to), body, loc, Rc::downgrade(&res));
+                from.borrow_mut().add_interpretation(
+                    Rc::downgrade(&to),
+                    body,
+                    loc,
+                    Rc::downgrade(&res),
+                );
                 None
             }
             ASTNode::PatternDecl(p) => {
@@ -192,7 +197,9 @@ impl<'a> RAST<'a> {
                 Some(RASTNode::Expression(RExpression { terms, max_depth }))
             }
             ASTNode::ComplexDef(expr, member, val) => {
-                let expr = RAST::resolve_node((ASTNode::Expression(expr), loc.clone()), res.clone()).unwrap();
+                let expr =
+                    RAST::resolve_node((ASTNode::Expression(expr), loc.clone()), res.clone())
+                        .unwrap();
                 let val = RAST::resolve_node((*val, loc), res.clone()).unwrap_or(RASTNode::Nil);
                 if let RASTNode::Expression(expr) = expr {
                     Some(RASTNode::ComplexDef(expr, member, Box::new(val)))

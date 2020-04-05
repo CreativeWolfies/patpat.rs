@@ -29,7 +29,11 @@ impl<'a> fmt::Debug for RASTNode<'a> {
                 .field(&pat.borrow().name)
                 .field(&args.borrow())
                 .finish(),
-            RASTNode::MethodCall(name, args) => f.debug_tuple("MethodCall").field(&name).field(&args.borrow()).finish(),
+            RASTNode::MethodCall(name, args) => f
+                .debug_tuple("MethodCall")
+                .field(&name)
+                .field(&args.borrow())
+                .finish(),
             RASTNode::VariableDef(var, value) => f
                 .debug_tuple("VariableDef")
                 .field(&var.name)

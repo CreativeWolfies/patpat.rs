@@ -1,9 +1,10 @@
 use super::*;
 use std::fmt;
+use token::TypeStrictness;
 
 #[derive(Clone)]
 pub struct RFunction<'a> {
-    pub args: Vec<FunctionArg>, // TODO: RFunctionArg
+    pub args: Vec<RFunctionArg<'a>>,
     pub body: Rc<RefCell<RAST<'a>>>,
     pub has_self: bool,
     pub has_lhs: bool,
@@ -18,7 +19,7 @@ impl<'a> From<(Function<'a>, RASTWeak<'a>, Location<'a>)> for RFunction<'a> {
         let parent = input.1;
         let loc = input.2;
 
-        let init = Rc::new(RefCell::new(RAST::new(parent)));
+        let init = Rc::new(RefCell::new(RAST::new(parent.clone())));
 
         for arg in function.args.iter() {
             init.borrow_mut()
@@ -40,10 +41,14 @@ impl<'a> From<(Function<'a>, RASTWeak<'a>, Location<'a>)> for RFunction<'a> {
 
         init.borrow_mut()
             .instructions
-            .push((RASTNode::Block(body), loc));
+            .push((RASTNode::Block(body), loc.clone()));
 
         RFunction {
-            args: function.args,
+            args: function
+                .args
+                .into_iter()
+                .map(|arg| RFunctionArg::from((arg, parent.clone(), loc.clone())))
+                .collect(),
             body: init,
             has_lhs: function.has_lhs,
             has_self: function.has_self,
@@ -68,5 +73,41 @@ impl<'a> fmt::Debug for RFunction<'a> {
         builder.field("has_lhs", &self.has_lhs);
         builder.field("has_self", &self.has_self);
         builder.finish()
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct RFunctionArg<'a> {
+    pub name: String,
+    pub argtype: RStructWeak<'a>,
+    pub strictness: TypeStrictness,
+}
+
+impl<'a> From<(FunctionArg, RASTWeak<'a>, Location<'a>)> for RFunctionArg<'a> {
+    fn from(input: (FunctionArg, RASTWeak<'a>, Location<'a>)) -> RFunctionArg<'a> {
+        let name = input.0.name;
+        let parent = input.1;
+        let loc = input.2;
+
+        if let Some(argtype) = input.0.argtype {
+            let st = lookup_struct(
+                TypeName { name: argtype.name },
+                loc.clone(),
+                &Vec::new(),
+                parent.clone(),
+            );
+
+            RFunctionArg {
+                name,
+                argtype: Rc::downgrade(&st),
+                strictness: argtype.strictness,
+            }
+        } else {
+            RFunctionArg {
+                name,
+                argtype: Weak::new(),
+                strictness: TypeStrictness::Normal,
+            }
+        }
     }
 }

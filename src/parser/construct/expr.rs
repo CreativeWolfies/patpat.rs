@@ -142,6 +142,7 @@ pub fn construct_expression<'a>(
                         }
                     } else if let Operator::MemberAccessor = op {
                         if let (ASTNode::PatternCall(name, body), call_loc) = res {
+                            // Handle method calls, ie. `variable.method()`
                             if term_ops.len() == 0 {
                                 if let (Token::Pattern(_), _) = &tree.tokens[offset2 - 2] {
                                     res = (ASTNode::MethodCall(name.clone(), body), call_loc);
@@ -151,6 +152,18 @@ pub fn construct_expression<'a>(
                                 }
                             } else {
                                 res = (ASTNode::PatternCall(name, body), call_loc);
+                            }
+                        } else if let (ASTNode::Variable(name), sym_loc) = res {
+                            // Handle member accessing, ie. `variable.member` (to differentiate it with `Variable`s which are later resolved)
+                            if term_ops.len() == 0 {
+                                if let (Token::Symbol(_), _) = &tree.tokens[offset2 - 1] {
+                                    res = (ASTNode::Member(name), sym_loc);
+                                } else {
+                                    // restitude `res`
+                                    res = (ASTNode::Variable(name), sym_loc);
+                                }
+                            } else {
+                                res = (ASTNode::Variable(name), sym_loc);
                             }
                         }
                     }
@@ -315,7 +328,7 @@ fn handle_definition<'a>(
         match &tree.tokens[*offset] {
             (Token::Symbol(name), _) => {
                 *offset += 1;
-                arg = DefineMember::Variable(name.clone());
+                arg = DefineMember::Member(name.clone());
             }
             (Token::Number(num), _) => {
                 *offset += 1;

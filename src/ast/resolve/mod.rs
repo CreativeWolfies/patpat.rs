@@ -25,6 +25,7 @@ TODO: cut down on RefCells
 
 pub type RPatRef<'a> = Rc<RefCell<RPattern<'a>>>;
 pub type RStructRef<'a> = Rc<RefCell<RStruct<'a>>>;
+pub type RStructWeak<'a> = Weak<RefCell<RStruct<'a>>>;
 pub type RFunRef<'a> = Rc<RefCell<RFunction<'a>>>;
 pub type RASTRef<'a> = Rc<RefCell<RAST<'a>>>;
 pub type RASTWeak<'a> = Weak<RefCell<RAST<'a>>>;
@@ -123,6 +124,12 @@ impl<'a> RAST<'a> {
                     ),
                 ))
             }
+            ASTNode::Interpretation(from, to, body) => {
+                let from = lookup_struct(from, loc.clone(), &res.borrow().structs, parent.clone());
+                let to = lookup_struct(to, loc.clone(), &res.borrow().structs, parent.clone());
+                from.borrow_mut().add_interpretation(Rc::downgrade(&to), body, loc, Rc::downgrade(&res));
+                None
+            }
             ASTNode::PatternDecl(p) => {
                 let pat =
                     lookup_pattern(p.name, loc.clone(), &res.borrow().patterns, parent.clone());
@@ -134,6 +141,10 @@ impl<'a> RAST<'a> {
                 let pat = lookup_pattern(name, loc.clone(), &res.borrow().patterns, parent.clone());
                 let args = RAST::resolve(args, Rc::downgrade(&res));
                 Some(RASTNode::PatternCall(pat, args))
+            }
+            ASTNode::MethodCall(name, args) => {
+                let args = RAST::resolve(args, Rc::downgrade(&res));
+                Some(RASTNode::MethodCall(name, args))
             }
             ASTNode::Struct(name, body) => {
                 let st = lookup_struct(name, loc.clone(), &res.borrow().structs, parent.clone());
@@ -153,6 +164,7 @@ impl<'a> RAST<'a> {
                     lookup_variable(name, loc.clone(), &res.borrow().variables, parent.clone());
                 Some(RASTNode::Variable(var))
             }
+            ASTNode::Member(name) => Some(RASTNode::Member(name)),
             ASTNode::Boolean(b) => Some(RASTNode::Boolean(b)),
             ASTNode::Number(num) => Some(RASTNode::Number(num)),
             ASTNode::Expression(expr) => {
@@ -179,6 +191,15 @@ impl<'a> RAST<'a> {
                 }
                 Some(RASTNode::Expression(RExpression { terms, max_depth }))
             }
+            ASTNode::ComplexDef(expr, member, val) => {
+                let expr = RAST::resolve_node((ASTNode::Expression(expr), loc.clone()), res.clone()).unwrap();
+                let val = RAST::resolve_node((*val, loc), res.clone()).unwrap_or(RASTNode::Nil);
+                if let RASTNode::Expression(expr) = expr {
+                    Some(RASTNode::ComplexDef(expr, member, Box::new(val)))
+                } else {
+                    panic!("RAST::resolve_node did not return an expression");
+                }
+            }
             ASTNode::Tuple(ast) => {
                 let mut elements: Vec<(RASTNode<'a>, Location<'a>)> =
                     Vec::with_capacity(ast.instructions.len());
@@ -194,6 +215,10 @@ impl<'a> RAST<'a> {
             ASTNode::Block(ast) => {
                 let block = RAST::resolve(ast, Rc::downgrade(&res));
                 Some(RASTNode::Block(block))
+            }
+            ASTNode::TypeName(name) => {
+                let st = lookup_struct(name, loc.clone(), &res.borrow().structs, parent.clone());
+                Some(RASTNode::TypeName(st))
             }
             ASTNode::Nil => Some(RASTNode::Nil),
             _ => None,

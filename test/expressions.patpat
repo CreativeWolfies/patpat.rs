@@ -20,3 +20,15 @@ a.x: 3
 () => {3}
 
 true
+
+A: struct {
+  let x: 0
+}
+
+B: struct {
+  let x: 1
+}
+
+B -> A: {
+  to.x: from.x
+}

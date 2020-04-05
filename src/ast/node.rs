@@ -20,6 +20,7 @@ pub enum ASTNode<'a> {
     String(String),
     Expression(Expression<'a>),
     Tuple(AST<'a>),
+    Block(AST<'a>),
     Interpretation(token::TypeName, token::TypeName, AST<'a>), // from, to, body
     Struct(token::TypeName, AST<'a>),                          // name, body
     Nil,
@@ -37,6 +38,7 @@ impl<'a> ASTNode<'a> {
             | ASTNode::Number(_)
             | ASTNode::String(_)
             | ASTNode::Tuple(_)
+            | ASTNode::Block(_)
             | ASTNode::TypeName(_)
             | ASTNode::Nil
             | ASTNode::VariableDef(_, _)

@@ -191,6 +191,10 @@ impl<'a> RAST<'a> {
                 }
                 Some(RASTNode::Tuple(elements))
             }
+            ASTNode::Block(ast) => {
+                let block = RAST::resolve(ast, Rc::downgrade(&res));
+                Some(RASTNode::Block(block))
+            }
             ASTNode::Nil => Some(RASTNode::Nil),
             _ => None,
         }

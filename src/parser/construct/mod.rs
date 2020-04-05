@@ -6,6 +6,7 @@ use super::{token, Token, TokenTree};
 use crate::Location;
 use std::rc::Rc;
 
+pub mod block;
 pub mod expr;
 pub mod functions;
 pub mod ident;
@@ -23,11 +24,9 @@ pub fn construct<'a>(
      *
      * Modifies `offset`
      */
-    if let Some(x) = expr::construct_expression(tree.clone(), offset) {
-        Some(x)
-    } else {
-        construct_non_expression(tree, offset)
-    }
+
+    expr::construct_expression(tree.clone(), offset)
+        .or_else(|| construct_non_expression(tree, offset))
 }
 
 pub fn construct_non_expression<'a>(
@@ -35,27 +34,16 @@ pub fn construct_non_expression<'a>(
     offset: &mut usize,
 ) -> Option<(ASTNode<'a>, Location<'a>)> {
     /*! Same as construct, it is separated to allow `construct_expression` to parse its terms */
-    if let Some(x) = functions::construct_pattern_declaration(tree.clone(), offset) {
-        Some(x)
-    } else if let Some(x) = functions::construct_pattern_call(tree.clone(), offset) {
-        Some(x)
-    } else if let Some(x) = functions::construct_standalone_function(tree.clone(), offset) {
-        Some(x)
-    } else if let Some(x) = functions::construct_standalone_pattern(tree.clone(), offset) {
-        Some(x)
-    } else if let Some(x) = r#struct::construct_struct(tree.clone(), offset) {
-        Some(x)
-    } else if let Some(x) = variables::construct_variable_definition(tree.clone(), offset) {
-        Some(x)
-    } else if let Some(x) = variables::construct_variable(tree.clone(), offset) {
-        Some(x)
-    } else if let Some(x) = variables::construct_variable_declaration(tree.clone(), offset) {
-        Some(x)
-    } else if let Some(x) = tuple::construct_tuple(tree.clone(), offset) {
-        Some(x)
-    } else if let Some(x) = ident::construct_ident(tree.clone(), offset) {
-        Some(x)
-    } else {
-        None
-    }
+
+    functions::construct_pattern_declaration(tree.clone(), offset)
+        .or_else(|| functions::construct_pattern_call(tree.clone(), offset))
+        .or_else(|| functions::construct_standalone_function(tree.clone(), offset))
+        .or_else(|| functions::construct_standalone_pattern(tree.clone(), offset))
+        .or_else(|| r#struct::construct_struct(tree.clone(), offset))
+        .or_else(|| variables::construct_variable_definition(tree.clone(), offset))
+        .or_else(|| variables::construct_variable(tree.clone(), offset))
+        .or_else(|| variables::construct_variable_declaration(tree.clone(), offset))
+        .or_else(|| tuple::construct_tuple(tree.clone(), offset))
+        .or_else(|| ident::construct_ident(tree.clone(), offset))
+        .or_else(|| block::construct_block(tree.clone(), offset))
 }

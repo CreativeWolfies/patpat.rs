@@ -15,7 +15,7 @@ pub fn lookup_variable<'a, 'b>(
         if var.borrow().name == name {
             return RSymRef::new(
                 var.clone(),
-                parent.upgrade().map(|p| p.borrow().depth + 1).unwrap_or(0)
+                parent.upgrade().map(|p| p.borrow().depth + 1).unwrap_or(0),
             );
         }
     }

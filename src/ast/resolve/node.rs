@@ -17,6 +17,7 @@ pub enum RASTNode<'a> {
     Tuple(Vec<(RASTNode<'a>, Location<'a>)>),
     Boolean(bool),
     Number(f64),
+    String(String),
     TypeName(RStructRef<'a>),
     Nil,
 }
@@ -55,6 +56,7 @@ impl<'a> fmt::Debug for RASTNode<'a> {
             RASTNode::TypeName(rstruct) => write!(f, "{:?}", rstruct.borrow().name),
             RASTNode::Boolean(b) => write!(f, "Boolean({})", b),
             RASTNode::Number(x) => write!(f, "Number({})", x),
+            RASTNode::String(string) => write!(f, "String({})", string),
             RASTNode::Nil => write!(f, "Nil"),
         }
     }

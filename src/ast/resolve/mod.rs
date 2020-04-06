@@ -9,7 +9,6 @@ pub mod variable;
 pub use super::*;
 pub use expr::*;
 pub use function::*;
-pub use lookup::*;
 pub use node::*;
 pub use pattern::*;
 pub use r#struct::*;
@@ -115,7 +114,7 @@ impl<'a> RAST<'a> {
         let parent = res.borrow().parent.clone();
         match node.0 {
             ASTNode::VariableInit(name, expr) | ASTNode::VariableDef(name, expr) => {
-                let s = lookup_variable(name, loc.clone(), &res.borrow().variables, parent.clone());
+                let s = lookup::lookup_variable(name, loc.clone(), &res.borrow().variables, parent.clone());
                 Some(RASTNode::VariableDef(
                     s,
                     Box::new(
@@ -125,8 +124,8 @@ impl<'a> RAST<'a> {
                 ))
             }
             ASTNode::Interpretation(from, to, body) => {
-                let from = lookup_struct(from, loc.clone(), &res.borrow().structs, parent.clone());
-                let to = lookup_struct(to, loc.clone(), &res.borrow().structs, parent.clone());
+                let from = lookup::lookup_struct(from, loc.clone(), &res.borrow().structs, parent.clone());
+                let to = lookup::lookup_struct(to, loc.clone(), &res.borrow().structs, parent.clone());
                 from.borrow_mut().add_interpretation(
                     Rc::downgrade(&to),
                     body,
@@ -137,13 +136,13 @@ impl<'a> RAST<'a> {
             }
             ASTNode::PatternDecl(p) => {
                 let pat =
-                    lookup_pattern(p.name, loc.clone(), &res.borrow().patterns, parent.clone());
+                    lookup::lookup_pattern(p.name, loc.clone(), &res.borrow().patterns, parent.clone());
                 let function = RFunction::from((p.function, Rc::downgrade(&res), loc));
                 pat.borrow_mut().function = Some(function);
                 None
             }
             ASTNode::PatternCall(name, args) => {
-                let pat = lookup_pattern(name, loc.clone(), &res.borrow().patterns, parent.clone());
+                let pat = lookup::lookup_pattern(name, loc.clone(), &res.borrow().patterns, parent.clone());
                 let args = RAST::resolve(args, Rc::downgrade(&res));
                 Some(RASTNode::PatternCall(pat, args))
             }
@@ -152,7 +151,7 @@ impl<'a> RAST<'a> {
                 Some(RASTNode::MethodCall(name, args))
             }
             ASTNode::Struct(name, body) => {
-                let st = lookup_struct(name, loc.clone(), &res.borrow().structs, parent.clone());
+                let st = lookup::lookup_struct(name, loc.clone(), &res.borrow().structs, parent.clone());
                 st.borrow_mut().context = Some(RAST::resolve(body, Rc::downgrade(&res)));
                 None
             }
@@ -161,17 +160,18 @@ impl<'a> RAST<'a> {
                 Some(RASTNode::Function(Rc::new(RefCell::new(rfn))))
             }
             ASTNode::Pattern(name) => {
-                let pat = lookup_pattern(name, loc.clone(), &res.borrow().patterns, parent.clone());
+                let pat = lookup::lookup_pattern(name, loc.clone(), &res.borrow().patterns, parent.clone());
                 Some(RASTNode::Pattern(pat))
             }
             ASTNode::Variable(name) => {
                 let var =
-                    lookup_variable(name, loc.clone(), &res.borrow().variables, parent.clone());
+                    lookup::lookup_variable(name, loc.clone(), &res.borrow().variables, parent.clone());
                 Some(RASTNode::Variable(var))
             }
             ASTNode::Member(name) => Some(RASTNode::Member(name)),
             ASTNode::Boolean(b) => Some(RASTNode::Boolean(b)),
             ASTNode::Number(num) => Some(RASTNode::Number(num)),
+            ASTNode::String(string) => Some(RASTNode::String(string)),
             ASTNode::Expression(expr) => {
                 let mut terms: Vec<RExprTerm<'a>> = Vec::with_capacity(expr.terms.len());
                 let mut depth: usize = 0;
@@ -224,7 +224,7 @@ impl<'a> RAST<'a> {
                 Some(RASTNode::Block(block))
             }
             ASTNode::TypeName(name) => {
-                let st = lookup_struct(name, loc.clone(), &res.borrow().structs, parent.clone());
+                let st = lookup::lookup_struct(name, loc.clone(), &res.borrow().structs, parent.clone());
                 Some(RASTNode::TypeName(st))
             }
             ASTNode::Nil => Some(RASTNode::Nil),

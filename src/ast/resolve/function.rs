@@ -90,7 +90,7 @@ impl<'a> From<(FunctionArg, RASTWeak<'a>, Location<'a>)> for RFunctionArg<'a> {
         let loc = input.2;
 
         if let Some(argtype) = input.0.argtype {
-            let st = lookup_struct(
+            let st = lookup::lookup_struct(
                 TypeName { name: argtype.name },
                 loc.clone(),
                 &Vec::new(),

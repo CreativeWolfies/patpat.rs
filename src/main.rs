@@ -3,6 +3,7 @@ use std::fs;
 use std::process;
 pub mod ast;
 pub mod error;
+pub mod interpreter;
 pub mod location;
 pub mod parser;
 use ast::resolve;
@@ -43,6 +44,8 @@ fn main() {
     if let Some(_) = args.iter().find(|x| **x == String::from("--dump-resolved")) {
         println!("{:#?}", resolved.borrow());
     }
+
+    interpreter::interprete(resolved, Vec::new());
 }
 
 fn exit_with_style(msg: &str) {

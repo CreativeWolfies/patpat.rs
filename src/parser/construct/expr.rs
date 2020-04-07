@@ -17,28 +17,28 @@ pub fn construct_expression<'a>(
     tree: Rc<TokenTree<'a>>,
     offset: &mut usize,
 ) -> Option<(ASTNode<'a>, Location<'a>)> {
-    /*! Constructs expressions out of the token tree.
-      This function is ran before any of the other non-expression functions.
-      Non-expression functions are handled by a second function in parser/construct/mod.rs, as to let out expression constructor query it to parse the terms making up the expression.
+    /* Constructs expressions out of the token tree.
+        This function is ran before any of the other non-expression functions.
+        Non-expression functions are handled by a second function in parser/construct/mod.rs, as to let out expression constructor query it to parse the terms making up the expression.
 
-      An expression looks like this:
-      `<term> <op> <term> {<op> <term>}`
+        An expression looks like this:
+        `<term> <op> <term> {<op> <term>}`
 
-      Where `<term>` can be preceded by an arbitrary number of unary operators.
+        Where `<term>` can be preceded by an arbitrary number of unary operators.
 
-      The returned object looks like this:
-      ```
-      Expression {
-        terms: [Push(term1), Push(term2), Op(op1), Op(op2), Push(term3), ...],
-      }
-      ```
-      `opX` may be of any kind.
-      This way, the interpreter does not have to traverse the expression tree.
+        The returned object looks like this:
+        ```
+        Expression {
+            terms: [Push(term1), Push(term2), Op(op1), Op(op2), Push(term3), ...],
+        }
+        ```
+        `opX` may be of any kind.
+        This way, the interpreter does not have to traverse the expression tree.
 
-      Operator precedence is not supported: this function and its childs will panic if the user types, eg. `a + b - c`; they'd have to type `(a + b) - c`.
-      This is due to the fact that these operators can easily be redefined in structs and precedence assumptions should thus not be made.
+        Operator precedence is not supported: this function and its childs will panic if the user types, eg. `a + b - c`; they'd have to type `(a + b) - c`.
+        This is due to the fact that these operators can easily be redefined in structs and precedence assumptions should thus not be made.
 
-      Modifies `offset`.
+        Modifies `offset`.
     */
 
     let first_term_ops: Vec<Operator> = handle_unary_operators(tree.clone(), offset);
@@ -235,9 +235,9 @@ fn append_term<'a, 'b>(
 
 fn handle_unary_operators<'a>(tree: Rc<TokenTree<'a>>, offset: &mut usize) -> Vec<Operator> {
     /*!
-    Handles unary operators; returns an array of unary operators preceding a term.
-    Modifies `offset`.
-    */
+     * Handles unary operators; returns an array of unary operators preceding a term.
+     * Modifies `offset`.
+     */
     let mut term_ops: Vec<Operator> = Vec::new();
 
     while let (Token::Operator(operator), loc) = &tree.tokens[*offset] {

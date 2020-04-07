@@ -6,6 +6,7 @@ pub mod error;
 pub mod interpreter;
 pub mod location;
 pub mod parser;
+pub mod test;
 use ast::resolve;
 pub use location::Location;
 

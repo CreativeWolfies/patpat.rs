@@ -6,7 +6,7 @@ pub fn construct_block<'a>(
     tree: Rc<TokenTree<'a>>,
     offset: &mut usize,
 ) -> Option<(ASTNode<'a>, Location<'a>)> {
-    /*! Constructs blocks (`{...}`)
+    /* Constructs blocks (`{...}`)
 
         **Example:**
 

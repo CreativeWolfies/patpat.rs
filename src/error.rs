@@ -1,6 +1,9 @@
 use crate::Location;
 use colored::*;
+use std::cell::RefCell;
 use std::fmt;
+
+thread_local!(pub static COMPERROR_EXIT: RefCell<bool> = RefCell::new(true));
 
 pub enum CompLocation<'a> {
     Char(&'a str, usize, usize), // (contents, line, char)
@@ -50,7 +53,13 @@ impl<'a> CompError<'a> {
 
     pub fn print_and_exit(self) -> ! {
         eprintln!("{}", &self);
-        std::process::exit(self.exit_code)
+        COMPERROR_EXIT.with(|e| {
+            if *e.borrow() {
+                std::process::exit(self.exit_code)
+            } else {
+                panic!()
+            }
+        })
     }
 }
 

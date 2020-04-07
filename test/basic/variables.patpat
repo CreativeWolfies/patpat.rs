@@ -1,0 +1,10 @@
+let a: 2
+let b: 4
+
+// a = 2 and b = 4
+
+a: b: a // We swap a and b
+
+// a = 4 and b = 2
+
+(a, b)

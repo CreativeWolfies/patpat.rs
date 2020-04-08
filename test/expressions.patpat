@@ -2,13 +2,13 @@
 
 5 * 6
 
-true && false && 1
+// true && false && 1
 
 'pat: () => {}
 
-'pat() + 1
+// 'pat() + 1
 
-(1 - 2) * !true * false
+((1 - 2) > 0) * !true * false
 
 let a: true
 let b: false
@@ -32,3 +32,5 @@ B: struct {
 B -> A: {
   to.x: from.x
 }
+
+"a" + "b"

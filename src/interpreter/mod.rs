@@ -3,9 +3,11 @@ use std::cell::RefCell;
 use std::ops::Deref;
 
 pub mod context;
+pub mod expr;
 pub mod value;
 
 pub use context::*;
+pub use expr::*;
 pub use value::*;
 
 pub fn interprete<'a>(ast: RASTRef<'a>, contexes: Vec<ContextRef<'a>>) -> VariableValue<'a> {
@@ -47,6 +49,7 @@ pub fn interprete_instruction<'a, 'b>(
             });
             res
         }
+        RASTNode::Expression(expr) => interprete_expression(expr, location, contexes),
         RASTNode::Block(ast) => interprete(ast.clone(), contexes.clone()),
         RASTNode::Variable(var) => with_variable(var, contexes, |var| var.clone()),
         RASTNode::Nil => VariableValue::Nil,

@@ -31,3 +31,6 @@
 151: Unknown symbol
 152: Unknown pattern
 153: Unknown struct
+
+201: Mixed types in expression
+202: Invalid operator in expression

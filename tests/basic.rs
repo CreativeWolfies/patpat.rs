@@ -20,3 +20,13 @@ fn variables() {
         test::execute(test::compile(&src))
     );
 }
+
+#[test]
+fn blocks() {
+    test::init_testenv();
+    let src = test::load("test/basic/blocks.patpat");
+    assert_eq!(
+        VariableValue::Number(3.0),
+        test::execute(test::compile(&src))
+    );
+}

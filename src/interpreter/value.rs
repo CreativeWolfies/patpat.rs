@@ -69,6 +69,7 @@ impl<'a> BinaryOp<'a, Self> for VariableValue<'a> {
                     VariableValue::String(y) => x.binary_op(y, op, loc),
                     VariableValue::Number(y) => x.binary_op(y, op, loc),
                     VariableValue::Boolean(y) => x.binary_op(y, op, loc),
+                    VariableValue::Nil => x.binary_op("nil".to_string(), op, loc),
                     _ => err_mixed_types(loc),
                 },
                 VariableValue::Number(x) => match b {

@@ -216,7 +216,9 @@ impl<'a> RAST<'a> {
                         }
                         ExprTerm::Op(operator) => {
                             terms.push(RExprTerm::Op(operator));
-                            depth -= 1;
+                            if operator.is_unary() {
+                                depth -= 1;
+                            }
                         }
                     }
                 }

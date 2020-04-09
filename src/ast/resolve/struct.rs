@@ -23,7 +23,7 @@ impl<'a> RStruct<'a> {
         loc: Location<'a>,
         parent: RASTWeak<'a>,
     ) {
-        let init = Rc::new(RefCell::new(RAST::new(parent)));
+        let init = Rc::new(RefCell::new(RAST::new(parent, ASTKind::Block)));
         init.borrow_mut()
             .variables
             .push(Rc::new(RefCell::new(RSymbol::new(String::from("from")))));

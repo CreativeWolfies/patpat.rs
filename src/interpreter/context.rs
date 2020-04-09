@@ -5,9 +5,11 @@ use std::collections::HashMap;
 
 pub type ContextRef<'a> = Rc<RefCell<Context<'a>>>;
 
+#[derive(Debug)]
 pub struct Context<'a> {
     pub depth: usize,
     pub variables: HashMap<String, VariableValue<'a>>,
+    pub last_value: VariableValue<'a>,
 }
 
 impl<'a> From<RASTRef<'a>> for Context<'a> {
@@ -21,6 +23,7 @@ impl<'a> From<RASTRef<'a>> for Context<'a> {
         Context {
             depth: ast.borrow().depth,
             variables,
+            last_value: VariableValue::Nil,
         }
     }
 }

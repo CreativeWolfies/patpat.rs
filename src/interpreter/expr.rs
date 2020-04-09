@@ -8,6 +8,7 @@ pub trait UnaryOp<'a> {
     fn unary_op(self: Self, op: &Operator, loc: Location<'a>) -> VariableValue<'a>;
 }
 
+#[derive(Debug)]
 pub enum ExprValue<'a> {
     Value(VariableValue<'a>),
 }

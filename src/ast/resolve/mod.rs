@@ -37,6 +37,7 @@ pub struct RAST<'a> {
     pub patterns: Vec<RPatRef<'a>>,
     pub structs: Vec<RStructRef<'a>>,
     pub depth: usize,
+    pub kind: ASTKind,
 }
 
 /** Calls RAST::resolve, returns the root node of the corresponding tree
@@ -50,7 +51,7 @@ impl<'a> RAST<'a> {
     /**
       Creates a new, empty RAST instance with as parent `parent`.
     */
-    pub fn new(parent: RASTWeak<'a>) -> RAST<'a> {
+    pub fn new(parent: RASTWeak<'a>, kind: ASTKind) -> RAST<'a> {
         RAST {
             instructions: Vec::new(),
             parent: parent.clone(),
@@ -58,6 +59,7 @@ impl<'a> RAST<'a> {
             patterns: Vec::new(),
             structs: Vec::new(),
             depth: parent.upgrade().map(|p| p.borrow().depth + 1).unwrap_or(0),
+            kind,
         }
     }
 
@@ -68,7 +70,7 @@ impl<'a> RAST<'a> {
 
     */
     pub fn resolve(ast: AST<'a>, parent: RASTWeak<'a>) -> RASTRef<'a> {
-        let res = Rc::new(RefCell::new(RAST::new(parent.clone())));
+        let res = Rc::new(RefCell::new(RAST::new(parent.clone(), ast.kind)));
 
         for instruction in ast.instructions.iter() {
             // first pass: find variables and patterns

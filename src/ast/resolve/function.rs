@@ -19,7 +19,7 @@ impl<'a> From<(Function<'a>, RASTWeak<'a>, Location<'a>)> for RFunction<'a> {
         let parent = input.1;
         let loc = input.2;
 
-        let init = Rc::new(RefCell::new(RAST::new(parent.clone())));
+        let init = Rc::new(RefCell::new(RAST::new(parent.clone(), ASTKind::Block)));
 
         for arg in function.args.iter() {
             init.borrow_mut()

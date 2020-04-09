@@ -16,12 +16,27 @@ pub fn interprete<'a>(ast: RASTRef<'a>, contexes: Vec<ContextRef<'a>>) -> Variab
     contexes.push(Rc::new(RefCell::new(Context::from(ast.clone()))));
     let mut last_value: VariableValue = VariableValue::Nil;
 
-    for instruction in &ast.borrow().instructions {
-        last_value = interprete_instruction(&instruction.0, instruction.1.clone(), &contexes);
-        println!("-> {:?}", last_value);
+    if let ASTKind::Tuple | ASTKind::ArgTuple = ast.borrow().kind {
+        let mut res: Vec<VariableValue<'a>> = Vec::new();
+        for instruction in &ast.borrow().instructions {
+            last_value = interprete_instruction(&instruction.0, instruction.1.clone(), &contexes);
+            contexes.last().unwrap().borrow_mut().last_value = last_value.clone();
+            println!("=> {:?}", last_value);
+            res.push(last_value);
+        }
+
+        VariableValue::Tuple(res)
+    } else {
+        for instruction in &ast.borrow().instructions {
+            last_value = interprete_instruction(&instruction.0, instruction.1.clone(), &contexes);
+            contexes.last().unwrap().borrow_mut().last_value = last_value.clone();
+            println!("-> {:?}", last_value);
+        }
+
+        last_value
     }
 
-    last_value
+
 }
 
 pub fn interprete_instruction<'a, 'b>(
@@ -48,6 +63,10 @@ pub fn interprete_instruction<'a, 'b>(
                 VariableValue::Nil
             });
             res
+        }
+        RASTNode::PatternCall(pat, args) => {
+            let args = interprete(args.clone(), contexes.clone());
+            call_function(pat.borrow().function.as_ref().unwrap(), args, location.clone(), contexes)
         }
         RASTNode::Expression(expr) => interprete_expression(expr, location, contexes),
         RASTNode::Block(ast) => interprete(ast.clone(), contexes.clone()),
@@ -83,4 +102,37 @@ where
         }
     }
     panic!("Couldn't find context at depth {}!", depth);
+}
+
+fn call_function<'a>(
+    fun: &RFunction<'a>,
+    args: VariableValue<'a>,
+    _loc: Location<'a>,
+    contexes: &Vec<ContextRef<'a>>,
+) -> VariableValue<'a> {
+    let mut init_ctx = Context::from(fun.body.clone());
+    if let VariableValue::Tuple(arglist) = args {
+        if arglist.len() != fun.args.len() {
+            panic!(); // TODO: CompError
+        }
+        for (from, to) in arglist.into_iter().zip(fun.args.iter()) {
+            // TODO: conversion
+            init_ctx.variables.insert(to.name.clone(), from);
+        }
+        if fun.has_lhs {
+            init_ctx.variables.insert("lhs".to_string(), contexes.last().unwrap().borrow().last_value.clone());
+        }
+
+        let mut contexes = contexes.clone();
+        contexes.push(Rc::new(RefCell::new(init_ctx)));
+
+        match fun.body.borrow().instructions.last().unwrap() {
+            (RASTNode::Block(body), _) => {
+                interprete(body.clone(), contexes)
+            }
+            _ => panic!("Expected function body node to be a block"),
+        }
+    } else {
+        panic!(); // TODO: CompError
+    }
 }

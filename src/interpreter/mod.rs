@@ -5,10 +5,12 @@ use std::ops::Deref;
 pub mod context;
 pub mod expr;
 pub mod value;
+pub mod callable;
 
 pub use context::*;
 pub use expr::*;
 pub use value::*;
+pub use callable::*;
 
 pub fn interprete<'a>(ast: RASTRef<'a>, contexes: Vec<ContextRef<'a>>) -> VariableValue<'a> {
     //! Interpretes an `RAST` block
@@ -66,7 +68,10 @@ pub fn interprete_instruction<'a, 'b>(
         }
         RASTNode::PatternCall(pat, args) => {
             let args = interprete(args.clone(), contexes.clone());
-            call_function(pat.borrow().function.as_ref().unwrap(), args, location.clone(), contexes)
+            pat.call(match args {
+                VariableValue::Tuple(list) => list,
+                x => vec![x],
+            }, location.clone(), contexes)
         }
         RASTNode::Expression(expr) => interprete_expression(expr, location, contexes),
         RASTNode::Block(ast) => interprete(ast.clone(), contexes.clone()),
@@ -102,37 +107,4 @@ where
         }
     }
     panic!("Couldn't find context at depth {}!", depth);
-}
-
-fn call_function<'a>(
-    fun: &RFunction<'a>,
-    args: VariableValue<'a>,
-    _loc: Location<'a>,
-    contexes: &Vec<ContextRef<'a>>,
-) -> VariableValue<'a> {
-    let mut init_ctx = Context::from(fun.body.clone());
-    if let VariableValue::Tuple(arglist) = args {
-        if arglist.len() != fun.args.len() {
-            panic!(); // TODO: CompError
-        }
-        for (from, to) in arglist.into_iter().zip(fun.args.iter()) {
-            // TODO: conversion
-            init_ctx.variables.insert(to.name.clone(), from);
-        }
-        if fun.has_lhs {
-            init_ctx.variables.insert("lhs".to_string(), contexes.last().unwrap().borrow().last_value.clone());
-        }
-
-        let mut contexes = contexes.clone();
-        contexes.push(Rc::new(RefCell::new(init_ctx)));
-
-        match fun.body.borrow().instructions.last().unwrap() {
-            (RASTNode::Block(body), _) => {
-                interprete(body.clone(), contexes)
-            }
-            _ => panic!("Expected function body node to be a block"),
-        }
-    } else {
-        panic!(); // TODO: CompError
-    }
 }

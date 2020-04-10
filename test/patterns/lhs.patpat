@@ -1,0 +1,6 @@
+'pat: (#lhs()) => {
+  lhs + 2
+}
+
+2
+'pat() // returns 4

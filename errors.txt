@@ -34,3 +34,4 @@
 
 201: Mixed types in expression
 202: Invalid operator in expression
+203: Mismatching number of arguments

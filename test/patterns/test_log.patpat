@@ -1,0 +1,6 @@
+#test_log(1)
+#test_log("Hello, world")
+#test_log(())
+#test_log(true)
+#test_log((false, 4.2))
+#test_log(false, 4.2)

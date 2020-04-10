@@ -51,13 +51,13 @@ impl<'a> CompError<'a> {
         self
     }
 
-    pub fn print_and_exit(self) -> ! {
+    pub fn print_and_exit(mut self) -> ! {
         eprintln!("{}", &self);
         COMPERROR_EXIT.with(|e| {
             if *e.borrow() {
                 std::process::exit(self.exit_code)
             } else {
-                panic!()
+                panic!(self.infos.remove(0).msg)
             }
         })
     }

@@ -1,9 +1,10 @@
 // This only contains test utilities
-use super::{ast, error, interpreter, parser, SrcFile};
+use super::{ast, error, interpreter, parser, SrcFile, ast::internal};
 use std::fs;
 
 pub fn init_testenv() {
     error::COMPERROR_EXIT.with(|e| *e.borrow_mut() = false);
+    internal::TEST_LOG.with(|t| *t.borrow_mut() = String::new());
 }
 
 pub fn load(path: &str) -> SrcFile {
@@ -29,4 +30,8 @@ pub fn compile<'a>(src_file: &'a SrcFile) -> ast::RASTRef<'a> {
 
 pub fn execute<'a>(program: ast::RASTRef<'a>) -> interpreter::VariableValue<'a> {
     interpreter::interprete(program, Vec::new())
+}
+
+pub fn get_logs() -> String {
+    internal::TEST_LOG.with(|t| t.borrow().clone())
 }

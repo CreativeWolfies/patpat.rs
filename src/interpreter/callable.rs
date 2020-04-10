@@ -51,7 +51,11 @@ impl<'a> Callable<'a> for RFunction<'a> {
         let mut init_ctx = Context::from(self.body.clone());
 
         if args.len() != self.args.len() {
-            panic!(); // TODO: CompError
+            CompError::new(
+                203,
+                format!("Mismatching number of arguments: expected {}, got {}.", self.args.len(), args.len()),
+                CompLocation::from(location)
+            ).print_and_exit();
         }
 
         for (from, to) in args.into_iter().zip(self.args.iter()) {

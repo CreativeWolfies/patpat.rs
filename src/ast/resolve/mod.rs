@@ -7,6 +7,7 @@ pub mod r#struct;
 pub mod variable;
 
 pub use super::*;
+pub use crate::interpreter::Callable;
 pub use expr::*;
 pub use function::*;
 pub use node::*;
@@ -22,7 +23,7 @@ This resolved AST has all of its variables, patterns, etc. resolved (ie. they al
 TODO: cut down on RefCells
 */
 
-pub type RPatRef<'a> = Rc<RPattern<'a>>;
+pub type RPatRef<'a> = Rc<(dyn Callable<'a> + 'a)>;
 pub type RStructRef<'a> = Rc<RefCell<RStruct<'a>>>;
 pub type RStructWeak<'a> = Weak<RefCell<RStruct<'a>>>;
 pub type RFunRef<'a> = Rc<RefCell<RFunction<'a>>>;
@@ -38,6 +39,7 @@ pub struct RAST<'a> {
     pub structs: Vec<RStructRef<'a>>,
     pub depth: usize,
     pub kind: ASTKind,
+    declared_patterns: Vec<Rc<RPattern<'a>>>, // helper Vec, used by RAST::resolve and RAST::resolve_node
 }
 
 /** Calls RAST::resolve, returns the root node of the corresponding tree
@@ -60,6 +62,7 @@ impl<'a> RAST<'a> {
             structs: Vec::new(),
             depth: parent.upgrade().map(|p| p.borrow().depth + 1).unwrap_or(0),
             kind,
+            declared_patterns: Vec::new(),
         }
     }
 
@@ -79,10 +82,11 @@ impl<'a> RAST<'a> {
                     .borrow_mut()
                     .variables
                     .push(Rc::new(RefCell::new(RSymbol::new(name.clone())))),
-                ASTNode::PatternDecl(p) => res
-                    .borrow_mut()
-                    .patterns
-                    .push(Rc::new(RPattern::new(p.name.clone()))),
+                ASTNode::PatternDecl(p) => {
+                    let pat = Rc::new(RPattern::new(p.name.clone()));
+                    res.borrow_mut().patterns.push(pat.clone());
+                    res.borrow_mut().declared_patterns.push(pat);
+                }
                 ASTNode::Struct(name, _) => res
                     .borrow_mut()
                     .structs
@@ -90,6 +94,15 @@ impl<'a> RAST<'a> {
                 _ => {}
             }
         }
+
+        let rev_declared_patterns = res
+            .borrow()
+            .declared_patterns
+            .iter()
+            .rev()
+            .map(|x| x.clone())
+            .collect();
+        res.borrow_mut().declared_patterns = rev_declared_patterns;
 
         for instruction in ast.instructions.into_iter() {
             // second pass: resolve instructions
@@ -144,12 +157,7 @@ impl<'a> RAST<'a> {
                 None
             }
             ASTNode::PatternDecl(p) => {
-                let pat = lookup::lookup_pattern(
-                    p.name,
-                    loc.clone(),
-                    &res.borrow().patterns,
-                    parent.clone(),
-                );
+                let pat = res.borrow_mut().declared_patterns.pop().unwrap();
                 let function = RFunction::from((p.function, Rc::downgrade(&res), loc));
                 pat.set_function(function);
                 None

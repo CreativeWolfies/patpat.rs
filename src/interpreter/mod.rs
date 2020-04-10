@@ -2,15 +2,15 @@ pub use super::ast::resolve::*;
 use std::cell::RefCell;
 use std::ops::Deref;
 
+pub mod callable;
 pub mod context;
 pub mod expr;
 pub mod value;
-pub mod callable;
 
+pub use callable::*;
 pub use context::*;
 pub use expr::*;
 pub use value::*;
-pub use callable::*;
 
 pub fn interprete<'a>(ast: RASTRef<'a>, contexes: Vec<ContextRef<'a>>) -> VariableValue<'a> {
     //! Interpretes an `RAST` block
@@ -37,8 +37,6 @@ pub fn interprete<'a>(ast: RASTRef<'a>, contexes: Vec<ContextRef<'a>>) -> Variab
 
         last_value
     }
-
-
 }
 
 pub fn interprete_instruction<'a, 'b>(
@@ -68,10 +66,14 @@ pub fn interprete_instruction<'a, 'b>(
         }
         RASTNode::PatternCall(pat, args) => {
             let args = interprete(args.clone(), contexes.clone());
-            pat.call(match args {
-                VariableValue::Tuple(list) => list,
-                x => vec![x],
-            }, location.clone(), contexes)
+            pat.call(
+                match args {
+                    VariableValue::Tuple(list) => list,
+                    x => vec![x],
+                },
+                location.clone(),
+                contexes,
+            )
         }
         RASTNode::Expression(expr) => interprete_expression(expr, location, contexes),
         RASTNode::Block(ast) => interprete(ast.clone(), contexes.clone()),

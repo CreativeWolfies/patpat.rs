@@ -27,7 +27,7 @@ impl<'a> fmt::Debug for RASTNode<'a> {
         match self {
             RASTNode::PatternCall(pat, args) => f
                 .debug_tuple("PatternCall")
-                .field(&pat.name)
+                .field(&pat.get_name())
                 .field(&args.borrow())
                 .finish(),
             RASTNode::MethodCall(name, args) => f
@@ -47,7 +47,7 @@ impl<'a> fmt::Debug for RASTNode<'a> {
                 .field(val)
                 .finish(),
             RASTNode::Function(rfn) => f.debug_tuple("Function").field(&rfn.borrow()).finish(),
-            RASTNode::Pattern(rfn) => f.debug_tuple("Pattern").field(&rfn.name).finish(),
+            RASTNode::Pattern(rfn) => f.debug_tuple("Pattern").field(&rfn.get_name()).finish(),
             RASTNode::Variable(var) => f.debug_tuple("Variable").field(&var.name).finish(),
             RASTNode::Member(name) => f.debug_tuple("Member").field(&name).finish(),
             RASTNode::Expression(expr) => f.debug_tuple("Expression").field(&expr).finish(),

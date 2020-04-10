@@ -22,7 +22,7 @@ This resolved AST has all of its variables, patterns, etc. resolved (ie. they al
 TODO: cut down on RefCells
 */
 
-pub type RPatRef<'a> = Rc<RefCell<RPattern<'a>>>;
+pub type RPatRef<'a> = Rc<RPattern<'a>>;
 pub type RStructRef<'a> = Rc<RefCell<RStruct<'a>>>;
 pub type RStructWeak<'a> = Weak<RefCell<RStruct<'a>>>;
 pub type RFunRef<'a> = Rc<RefCell<RFunction<'a>>>;
@@ -82,7 +82,7 @@ impl<'a> RAST<'a> {
                 ASTNode::PatternDecl(p) => res
                     .borrow_mut()
                     .patterns
-                    .push(Rc::new(RefCell::new(RPattern::new(p.name.clone())))),
+                    .push(Rc::new(RPattern::new(p.name.clone()))),
                 ASTNode::Struct(name, _) => res
                     .borrow_mut()
                     .structs
@@ -151,7 +151,7 @@ impl<'a> RAST<'a> {
                     parent.clone(),
                 );
                 let function = RFunction::from((p.function, Rc::downgrade(&res), loc));
-                pat.borrow_mut().function = Some(function);
+                pat.set_function(function);
                 None
             }
             ASTNode::PatternCall(name, args) => {

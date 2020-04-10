@@ -47,7 +47,7 @@ pub fn lookup_pattern<'a, 'b>(
     parent: RASTWeak<'a>,
 ) -> RPatRef<'a> {
     for pat in patterns {
-        if pat.borrow().name == name {
+        if pat.name == name {
             return pat.clone(); // move out of 'b
         }
     }

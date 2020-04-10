@@ -4,15 +4,9 @@ pub trait Callable<'a> {
   fn call(&self, args: Vec<VariableValue<'a>>, location: Location<'a>, contexes: &Vec<ContextRef<'a>>) -> VariableValue<'a>;
 }
 
-impl<'a> Callable<'a> for RPatRef<'a> {
-  fn call(&self, args: Vec<VariableValue<'a>>, location: Location<'a>, contexes: &Vec<ContextRef<'a>>) -> VariableValue<'a> {
-    self.borrow().call(args, location, contexes)
-  }
-}
-
 impl<'a> Callable<'a> for RPattern<'a> {
   fn call(&self, args: Vec<VariableValue<'a>>, location: Location<'a>, contexes: &Vec<ContextRef<'a>>) -> VariableValue<'a> {
-    self.function.as_ref().unwrap().call(args, location, contexes)
+    self.function.borrow().as_ref().unwrap().call(args, location, contexes)
   }
 }
 

@@ -46,7 +46,10 @@ pub struct RAST<'a> {
 * TODO: make it use a standard set of variables, structs, etc.
 */
 pub fn resolve<'a>(ast: AST<'a>) -> RASTRef {
-    RAST::resolve(ast, Weak::new())
+    RAST::resolve(
+        ast,
+        Rc::downgrade(&Rc::new(RefCell::new(internal::std_rast()))),
+    )
 }
 
 impl<'a> RAST<'a> {

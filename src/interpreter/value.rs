@@ -1,7 +1,7 @@
 use super::*;
-
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::fmt;
 use token::Operator;
 
 #[derive(Debug, Clone)]
@@ -12,6 +12,26 @@ pub enum VariableValue<'a> {
     Instance(RStructRef<'a>, RefCell<HashMap<String, VariableValue<'a>>>), // TODO
     Tuple(Vec<VariableValue<'a>>),
     Nil,
+}
+
+impl<'a> fmt::Display for VariableValue<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            VariableValue::String(x) => write!(f, "{}", x),
+            VariableValue::Number(x) => write!(f, "{}", x),
+            VariableValue::Boolean(x) => write!(f, "{}", x),
+            VariableValue::Instance(x, _) => write!(f, "[{} instance]", x.borrow().name),
+            VariableValue::Tuple(x) => write!(
+                f,
+                "({})",
+                x.iter()
+                    .map(|x| format!("{}", x))
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
+            VariableValue::Nil => write!(f, "nil"),
+        }
+    }
 }
 
 impl<'a> PartialEq for VariableValue<'a> {

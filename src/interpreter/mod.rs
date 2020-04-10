@@ -23,7 +23,7 @@ pub fn interprete<'a>(ast: RASTRef<'a>, contexes: Vec<ContextRef<'a>>) -> Variab
         for instruction in &ast.borrow().instructions {
             last_value = interprete_instruction(&instruction.0, instruction.1.clone(), &contexes);
             contexes.last().unwrap().borrow_mut().last_value = last_value.clone();
-            println!("=> {:?}", last_value);
+            // println!("=> {:?}", last_value);
             res.push(last_value);
         }
 
@@ -32,7 +32,7 @@ pub fn interprete<'a>(ast: RASTRef<'a>, contexes: Vec<ContextRef<'a>>) -> Variab
         for instruction in &ast.borrow().instructions {
             last_value = interprete_instruction(&instruction.0, instruction.1.clone(), &contexes);
             contexes.last().unwrap().borrow_mut().last_value = last_value.clone();
-            println!("-> {:?}", last_value);
+            // println!("-> {:?}", last_value);
         }
 
         last_value

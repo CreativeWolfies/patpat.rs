@@ -18,6 +18,7 @@
 18: Invalid term in interpretation definition
 19: Invalid term in variable definition
 20: Invalid term in struct definition
+21: Invalid instruction
 
 101: Unexpected ')'
 102: Unexpected '}'

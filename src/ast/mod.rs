@@ -53,8 +53,12 @@ impl<'a> AST<'a> {
                     expect_next_instruction(raw.clone(), &mut offset);
                 }
                 None => {
-                    // ERROR: invalid token
-                    panic!("Unimplemented")
+                    CompError::new(
+                        21,
+                        String::from("Invalid instruction"),
+                        CompLocation::from(&raw.tokens[offset].1),
+                    )
+                    .print_and_exit();
                 }
             }
         }

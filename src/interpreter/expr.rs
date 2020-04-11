@@ -27,7 +27,26 @@ pub fn interprete_expression<'a>(
                 contexes,
             ))),
             RExprTerm::Op(op) => match op {
-                Operator::Interpretation | Operator::MemberAccessor => unimplemented!(),
+                Operator::Interpretation => unimplemented!(),
+                Operator::MemberAccessor => {
+                    let right = stack.pop().unwrap();
+                    let left = stack.pop().unwrap();
+                    match left {
+                        ExprValue::Value(VariableValue::Function(fun)) => {
+                            let args = match right {
+                                ExprValue::Value(VariableValue::Tuple(vec)) => vec,
+                                ExprValue::Value(x) => vec![x],
+                                // _ => unimplemented!()
+                            };
+                            stack.push(ExprValue::Value(fun.call(
+                                args,
+                                location.clone(),
+                                contexes,
+                            )));
+                        }
+                        _ => unimplemented!(),
+                    }
+                }
                 Operator::Not => {
                     let res = execute_unary_op(stack.pop().unwrap(), &op, location.clone());
                     stack.push(res);

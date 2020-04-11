@@ -1,5 +1,5 @@
 // This only contains test utilities
-use super::{ast, error, interpreter, parser, SrcFile, ast::internal};
+use super::{ast, ast::internal, error, interpreter, parser, SrcFile};
 use std::fs;
 
 pub fn init_testenv() {

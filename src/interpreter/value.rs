@@ -11,7 +11,9 @@ pub enum VariableValue<'a> {
     Boolean(bool),
     Instance(RStructRef<'a>, RefCell<HashMap<String, VariableValue<'a>>>), // TODO
     Tuple(Vec<VariableValue<'a>>),
+    Function(Rc<(dyn Callable<'a> + 'a)>),
     Nil,
+    Bail,
 }
 
 impl<'a> fmt::Display for VariableValue<'a> {
@@ -30,6 +32,8 @@ impl<'a> fmt::Display for VariableValue<'a> {
                     .join(", ")
             ),
             VariableValue::Nil => write!(f, "nil"),
+            VariableValue::Bail => write!(f, "bail"),
+            VariableValue::Function(fun) => write!(f, "[function {}]", fun.get_name()),
         }
     }
 }
@@ -65,6 +69,13 @@ impl<'a> PartialEq for VariableValue<'a> {
                     false
                 }
             }
+            VariableValue::Bail => {
+                if let VariableValue::Bail = other {
+                    true
+                } else {
+                    false
+                }
+            }
             VariableValue::Tuple(x) => {
                 if let VariableValue::Tuple(y) = other {
                     x == y
@@ -73,6 +84,7 @@ impl<'a> PartialEq for VariableValue<'a> {
                 }
             }
             VariableValue::Instance(_, _) => false, // instance comparison is not yet supported
+            VariableValue::Function(_) => false,    // function comparison is not yet supported
         }
     }
 }
@@ -90,6 +102,10 @@ impl<'a> BinaryOp<'a, Self> for VariableValue<'a> {
                     VariableValue::Number(y) => x.binary_op(y, op, loc),
                     VariableValue::Boolean(y) => x.binary_op(y, op, loc),
                     VariableValue::Nil => x.binary_op("nil".to_string(), op, loc),
+                    VariableValue::Bail => x.binary_op("bail".to_string(), op, loc),
+                    VariableValue::Function(y) => {
+                        x.binary_op(format!("[function {}]", y.get_name()), op, loc)
+                    }
                     _ => err_mixed_types(loc),
                 },
                 VariableValue::Number(x) => match b {
@@ -106,6 +122,10 @@ impl<'a> BinaryOp<'a, Self> for VariableValue<'a> {
                     VariableValue::String(y) => "nil".to_string().binary_op(y, op, loc),
                     _ => err_mixed_types(loc),
                 },
+                VariableValue::Bail => match b {
+                    VariableValue::String(y) => "bail".to_string().binary_op(y, op, loc),
+                    _ => err_mixed_types(loc),
+                },
                 VariableValue::Tuple(vec) => match b {
                     VariableValue::Tuple(b_vec) => {
                         let mut res: Vec<VariableValue<'a>> = Vec::with_capacity(vec.len());
@@ -116,6 +136,13 @@ impl<'a> BinaryOp<'a, Self> for VariableValue<'a> {
                     }
                     _ => err_mixed_types(loc),
                 },
+                VariableValue::Function(x) => {
+                    if let VariableValue::String(y) = b {
+                        format!("[function {}]", x.get_name()).binary_op(y, op, loc)
+                    } else {
+                        err_invalid_op(loc)
+                    }
+                }
                 _ => unimplemented!(),
             }
         }

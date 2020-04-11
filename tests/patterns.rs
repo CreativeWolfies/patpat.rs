@@ -46,3 +46,13 @@ fn nargs_panic() {
     let src = test::load("test/patterns/nargs_panic.patpat");
     test::execute(test::compile(&src));
 }
+
+#[test]
+fn r#if() {
+    test::init_testenv();
+    let src = test::load("test/patterns/if.patpat");
+    assert_eq!(
+        VariableValue::Tuple(vec![VariableValue::Number(1.0), VariableValue::Bail]),
+        test::execute(test::compile(&src))
+    );
+}

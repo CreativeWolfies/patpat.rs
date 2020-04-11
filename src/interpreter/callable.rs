@@ -1,4 +1,5 @@
 use super::*;
+use std::cell::RefCell;
 use std::fmt;
 
 pub trait Callable<'a> {
@@ -38,7 +39,7 @@ impl<'a> Callable<'a> for RPattern<'a> {
 
 impl<'a> Callable<'a> for RFunction<'a> {
     fn get_name(&self) -> String {
-        "<function>".to_string()
+        "<anonymous function>".to_string()
     }
 
     #[allow(unused_variables)]
@@ -53,9 +54,14 @@ impl<'a> Callable<'a> for RFunction<'a> {
         if args.len() != self.args.len() {
             CompError::new(
                 203,
-                format!("Mismatching number of arguments: expected {}, got {}.", self.args.len(), args.len()),
-                CompLocation::from(location)
-            ).print_and_exit();
+                format!(
+                    "Mismatching number of arguments: expected {}, got {}.",
+                    self.args.len(),
+                    args.len()
+                ),
+                CompLocation::from(location),
+            )
+            .print_and_exit();
         }
 
         for (from, to) in args.into_iter().zip(self.args.iter()) {
@@ -78,5 +84,20 @@ impl<'a> Callable<'a> for RFunction<'a> {
             (RASTNode::Block(body), _) => interprete(body.clone(), contexes),
             _ => panic!("Expected function body node to be a block"),
         }
+    }
+}
+
+impl<'a> Callable<'a> for RefCell<RFunction<'a>> {
+    fn get_name(&self) -> String {
+        "<anonymous function>".to_string()
+    }
+
+    fn call(
+        &self,
+        args: Vec<VariableValue<'a>>,
+        location: Location<'a>,
+        contexes: &Vec<ContextRef<'a>>,
+    ) -> VariableValue<'a> {
+        self.borrow().call(args, location, contexes)
     }
 }

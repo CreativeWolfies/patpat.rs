@@ -79,6 +79,8 @@ pub fn interprete_instruction<'a, 'b>(
         RASTNode::Block(ast) => interprete(ast.clone(), contexes.clone()),
         RASTNode::Variable(var) => with_variable(var, contexes, |var| var.clone()),
         RASTNode::Nil => VariableValue::Nil,
+        RASTNode::Pattern(pat) => VariableValue::Function(pat.clone()),
+        RASTNode::Function(fun) => VariableValue::Function(fun.clone()),
         _ => VariableValue::Nil,
     }
 }

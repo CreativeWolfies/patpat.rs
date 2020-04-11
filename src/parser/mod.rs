@@ -275,6 +275,6 @@ pub const MATCHERS: [(token::Kind, &str); 21] = [
     (token::Kind::TypeName, "^[A-Z][\\w_\\d]*"),
     (token::Kind::BlockStart, "^\\{"),
     (token::Kind::BlockEnd, "^\\}"),
-    (token::Kind::StringDelimiter, "\""),
+    (token::Kind::StringDelimiter, "^\""),
     (token::Kind::Separator, "^,"),
 ];

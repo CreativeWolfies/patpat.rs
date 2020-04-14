@@ -84,7 +84,7 @@ pub fn std_rast<'a>() -> RAST<'a> {
 
 fn add_pattern<'a, F: 'static>(rast: &mut RAST<'a>, name: &str, fun: F)
 where
-    F: for<'b> Fn(Vec<VariableValue<'b>>, Location<'b>, &Vec<ContextRef<'b>>) -> VariableValue<'b>,
+    F: Fn(Vec<VariableValue<'a>>, Location<'a>, &Vec<ContextRef<'a>>) -> VariableValue<'a>,
 {
     rast.patterns
         .push(Rc::new(IntPattern::new(name.to_string(), fun)));

@@ -1,17 +1,14 @@
 use super::*;
 use std::fmt;
 
-pub struct IntPattern<T>
-where
-    T: for<'a> Fn(Vec<VariableValue<'a>>, Location<'a>, &Vec<ContextRef<'a>>) -> VariableValue<'a>,
-{
+pub struct IntPattern<T> {
     pub name: String,
     pub fun: T,
 }
 
-impl<T> IntPattern<T>
+impl<'a, T> IntPattern<T>
 where
-    T: for<'a> Fn(Vec<VariableValue<'a>>, Location<'a>, &Vec<ContextRef<'a>>) -> VariableValue<'a>,
+    T: Fn(Vec<VariableValue<'a>>, Location<'a>, &Vec<ContextRef<'a>>) -> VariableValue<'a>,
 {
     pub fn new(name: String, fun: T) -> IntPattern<T> {
         IntPattern { name, fun }
@@ -20,7 +17,7 @@ where
 
 impl<'a, T> Callable<'a> for IntPattern<T>
 where
-    T: for<'b> Fn(Vec<VariableValue<'b>>, Location<'b>, &Vec<ContextRef<'b>>) -> VariableValue<'b>,
+    T: Fn(Vec<VariableValue<'a>>, Location<'a>, &Vec<ContextRef<'a>>) -> VariableValue<'a>,
 {
     fn get_name(&self) -> String {
         self.name.clone()
@@ -36,9 +33,9 @@ where
     }
 }
 
-impl<T> fmt::Debug for IntPattern<T>
+impl<'a, T> fmt::Debug for IntPattern<T>
 where
-    T: for<'a> Fn(Vec<VariableValue<'a>>, Location<'a>, &Vec<ContextRef<'a>>) -> VariableValue<'a>,
+    T: Fn(Vec<VariableValue<'a>>, Location<'a>, &Vec<ContextRef<'a>>) -> VariableValue<'a>,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "IntPattern({})", self.name)

@@ -1,21 +1,27 @@
 use super::*;
 use std::fmt;
 
-type CallableFn<'a> =
-    dyn Fn(Vec<VariableValue<'a>>, Location<'a>, &Vec<ContextRef<'a>>) -> VariableValue<'a>;
-
-pub struct IntPattern<'a> {
+pub struct IntPattern<T>
+where
+    T: for<'a> Fn(Vec<VariableValue<'a>>, Location<'a>, &Vec<ContextRef<'a>>) -> VariableValue<'a>,
+{
     pub name: String,
-    pub fun: Box<CallableFn<'a>>,
+    pub fun: T,
 }
 
-impl<'a> IntPattern<'a> {
-    pub fn new(name: String, fun: Box<CallableFn<'a>>) -> IntPattern<'a> {
+impl<T> IntPattern<T>
+where
+    T: for<'a> Fn(Vec<VariableValue<'a>>, Location<'a>, &Vec<ContextRef<'a>>) -> VariableValue<'a>,
+{
+    pub fn new(name: String, fun: T) -> IntPattern<T> {
         IntPattern { name, fun }
     }
 }
 
-impl<'a> Callable<'a> for IntPattern<'a> {
+impl<'a, T> Callable<'a> for IntPattern<T>
+where
+    T: for<'b> Fn(Vec<VariableValue<'b>>, Location<'b>, &Vec<ContextRef<'b>>) -> VariableValue<'b>,
+{
     fn get_name(&self) -> String {
         self.name.clone()
     }
@@ -30,7 +36,10 @@ impl<'a> Callable<'a> for IntPattern<'a> {
     }
 }
 
-impl<'a> fmt::Debug for IntPattern<'a> {
+impl<T> fmt::Debug for IntPattern<T>
+where
+    T: for<'a> Fn(Vec<VariableValue<'a>>, Location<'a>, &Vec<ContextRef<'a>>) -> VariableValue<'a>,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "IntPattern({})", self.name)
     }

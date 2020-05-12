@@ -1,6 +1,4 @@
 // This prints the first 10 numbers of the fibonacci sequence
-#for: () => {}
-'println: () => {}
 
 #for(1, 10, (n) => {
   let a: 1
@@ -10,11 +8,9 @@
     a: b: a + b
   })
 
-  'println(a)
+  #println(a)
 })
 
-// Alternative, shorter yet uglier version could be:
-// #for(1,10,(n)=>{let a:1,let b:1,'println(#for(0,n,()=>{a:b:a+b}))})
-// And obviously,
-// let a:1,let b:1,#for(1,10,()=>{'println(a:b:a+b)})
+// Alternative version:
+// let a:1,let b:1,#for(1,10,(_)=>{#println(a:b:a+b)})
 // Is a much more efficient approach

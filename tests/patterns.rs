@@ -66,3 +66,13 @@ fn elseif() {
         test::execute(test::compile(&src))
     );
 }
+
+#[test]
+fn r#for() {
+    test::init_testenv();
+    let src = test::load("test/patterns/for.patpat");
+    assert_eq!(
+        VariableValue::Number(55f64),
+        test::execute(test::compile(&src))
+    );
+}

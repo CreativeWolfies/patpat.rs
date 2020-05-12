@@ -95,6 +95,30 @@ pub fn std_rast<'a>() -> RAST<'a> {
 
     add_pattern(&mut res, "#bail", |_, _, _| VariableValue::Bail);
 
+    add_pattern(&mut res, "#for", |args, loc, contexes| {
+        if args.len() < 3 {
+            // TODO: error out
+            return VariableValue::Nil;
+        }
+        let mut iter = args.into_iter();
+        let from_raw = iter.next().unwrap();
+        let to_raw = iter.next().unwrap();
+        let callback_raw = iter.next().unwrap();
+        if let VariableValue::Function(callback) = callback_raw {
+            if let (VariableValue::Number(from), VariableValue::Number(to)) = (from_raw, to_raw) {
+                for x in (from as usize)..((to + 1f64) as usize) {
+                    match callback.call(vec![VariableValue::Number(x as f64)], loc.clone(), contexes) {
+                        VariableValue::Bail => {
+                            return VariableValue::Bail;
+                        },
+                        _ => {}
+                    }
+                }
+            }
+        }
+        return VariableValue::Nil;
+    });
+
     res
 }
 

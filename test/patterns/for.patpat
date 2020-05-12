@@ -1,0 +1,6 @@
+let sum: 0
+#for(1, 10, (x) => {
+  sum: sum + x
+})
+
+sum

@@ -1,0 +1,10 @@
+(
+  {
+    #if(false, 0.0)
+    #elseif(true, 1.0)
+  },
+  {
+    #if(false, 0.0)
+    #elseif(false, 1.0)
+  }
+)

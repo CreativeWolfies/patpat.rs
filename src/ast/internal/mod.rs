@@ -44,13 +44,7 @@ pub fn std_rast<'a>() -> RAST<'a> {
             return VariableValue::Nil;
         }
         let mut iter = args.into_iter();
-        if match iter.next().unwrap() {
-            VariableValue::Number(x) => x != 0.0,
-            VariableValue::Boolean(x) => x,
-            VariableValue::String(x) => x.len() > 0,
-            VariableValue::Nil => false,
-            _ => true,
-        } {
+        if is_truthy(iter.next().unwrap()) {
             match iter.next().unwrap() {
                 VariableValue::Function(fun) => {
                     // TODO: give Callable a n_args() method
@@ -77,6 +71,28 @@ pub fn std_rast<'a>() -> RAST<'a> {
         }
     });
 
+    add_pattern(&mut res, "#elseif", |args, loc, contexes| {
+        let last_value = contexes.last().unwrap().borrow().last_value.clone();
+        if args.len() < 2 {
+            return VariableValue::Nil;
+        }
+        let mut iter = args.into_iter();
+
+        match last_value {
+            VariableValue::Bail => {
+                if is_truthy(iter.next().unwrap()) { // 1st argument: condition
+                    match iter.next().unwrap() { // 2nd argument
+                        VariableValue::Function(fun) => fun.call(vec![], loc, contexes),
+                        x => x,
+                    }
+                } else {
+                    last_value
+                }
+            },
+            x => x,
+        }
+    });
+
     add_pattern(&mut res, "#bail", |_, _, _| VariableValue::Bail);
 
     res
@@ -88,4 +104,14 @@ where
 {
     rast.patterns
         .push(Rc::new(IntPattern::new(name.to_string(), fun)));
+}
+
+fn is_truthy(value: VariableValue) -> bool {
+    match value {
+        VariableValue::Number(x) => x != 0.0,
+        VariableValue::Boolean(x) => x,
+        VariableValue::String(x) => x.len() > 0,
+        VariableValue::Nil => false,
+        _ => true,
+    }
 }

@@ -56,3 +56,13 @@ fn r#if() {
         test::execute(test::compile(&src))
     );
 }
+
+#[test]
+fn elseif() {
+    test::init_testenv();
+    let src = test::load("test/patterns/elseif.patpat");
+    assert_eq!(
+        VariableValue::Tuple(vec![VariableValue::Number(1.0), VariableValue::Bail]),
+        test::execute(test::compile(&src))
+    );
+}

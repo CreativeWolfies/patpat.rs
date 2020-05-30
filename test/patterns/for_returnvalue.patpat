@@ -1,0 +1,7 @@
+let n: 1
+
+#println(
+  #for(1, 5, (x) => {
+    n: n * x
+  })
+)

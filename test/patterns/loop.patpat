@@ -1,0 +1,7 @@
+let n: 0
+
+#loop(() => {
+  n: n + 1
+  #if(n < 10, () => {#println(n)})
+  #elseif(n == 10, () => {#println("ten")})
+})

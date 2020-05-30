@@ -106,17 +106,38 @@ pub fn std_rast<'a>() -> RAST<'a> {
         let callback_raw = iter.next().unwrap();
         if let VariableValue::Function(callback) = callback_raw {
             if let (VariableValue::Number(from), VariableValue::Number(to)) = (from_raw, to_raw) {
+                let mut last_value = VariableValue::Nil;
                 for x in (from as usize)..((to + 1f64) as usize) {
                     match callback.call(vec![VariableValue::Number(x as f64)], loc.clone(), contexes) {
                         VariableValue::Bail => {
                             return VariableValue::Bail;
                         },
-                        _ => {}
+                        x => last_value = x,
                     }
                 }
+                return last_value;
             }
         }
         return VariableValue::Nil;
+    });
+
+    add_pattern(&mut res, "#loop", |args, loc, contexes| {
+        if args.len() < 1 {
+            // TODO: error out
+            return VariableValue::Nil;
+        }
+        let callback_raw = args.into_iter().next().unwrap();
+        if let VariableValue::Function(callback) = callback_raw {
+            loop {
+                match callback.call(vec![], loc.clone(), contexes) {
+                    VariableValue::Bail => {
+                        return VariableValue::Bail;
+                    },
+                    _ => {}
+                }
+            }
+        }
+        VariableValue::Nil
     });
 
     res

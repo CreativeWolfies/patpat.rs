@@ -23,11 +23,12 @@ where
         self.name.clone()
     }
 
-    fn call(
+    fn call_member(
         &self,
         args: Vec<VariableValue<'a>>,
         location: Location<'a>,
         contexes: &Vec<ContextRef<'a>>,
+        _parent: Option<VariableValue<'a>>,
     ) -> VariableValue<'a> {
         (self.fun)(args, location, contexes)
     }

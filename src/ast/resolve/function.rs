@@ -8,6 +8,7 @@ pub struct RFunction<'a> {
     pub body: Rc<RefCell<RAST<'a>>>,
     pub has_self: bool,
     pub has_lhs: bool,
+    pub has_new: bool,
 }
 
 impl<'a> From<(Function<'a>, RASTWeak<'a>, Location<'a>)> for RFunction<'a> {
@@ -52,6 +53,7 @@ impl<'a> From<(Function<'a>, RASTWeak<'a>, Location<'a>)> for RFunction<'a> {
             body: init,
             has_lhs: function.has_lhs,
             has_self: function.has_self,
+            has_new: function.has_new,
         }
     }
 }

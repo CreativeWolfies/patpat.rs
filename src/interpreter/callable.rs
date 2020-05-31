@@ -1,15 +1,31 @@
 use super::*;
 use std::cell::RefCell;
 use std::fmt;
+use std::collections::HashMap;
 
 pub trait Callable<'a> {
     fn get_name(&self) -> String;
+
+    fn call_member(
+        &self,
+        args: Vec<VariableValue<'a>>,
+        location: Location<'a>,
+        contexes: &Vec<ContextRef<'a>>,
+        parent: Option<VariableValue<'a>>,
+    ) -> VariableValue<'a>;
+
+    fn get_args_n(&self) -> Option<usize> {
+        None
+    }
+
     fn call(
         &self,
         args: Vec<VariableValue<'a>>,
         location: Location<'a>,
         contexes: &Vec<ContextRef<'a>>,
-    ) -> VariableValue<'a>;
+    ) -> VariableValue<'a> {
+        self.call_member(args, location, contexes, None)
+    }
 }
 
 impl<'a> fmt::Debug for dyn Callable<'a> + 'a {
@@ -23,17 +39,18 @@ impl<'a> Callable<'a> for RPattern<'a> {
         self.name.clone()
     }
 
-    fn call(
+    fn call_member(
         &self,
         args: Vec<VariableValue<'a>>,
         location: Location<'a>,
         contexes: &Vec<ContextRef<'a>>,
+        parent: Option<VariableValue<'a>>,
     ) -> VariableValue<'a> {
         self.function
             .borrow()
             .as_ref()
             .unwrap()
-            .call(args, location, contexes)
+            .call_member(args, location, contexes, parent)
     }
 }
 
@@ -43,12 +60,14 @@ impl<'a> Callable<'a> for RFunction<'a> {
     }
 
     #[allow(unused_variables)]
-    fn call(
+    fn call_member(
         &self,
         args: Vec<VariableValue<'a>>,
         location: Location<'a>,
         contexes: &Vec<ContextRef<'a>>,
+        parent: Option<VariableValue<'a>>,
     ) -> VariableValue<'a> {
+        //! Asserts that contexes is not empty
         let mut init_ctx = Context::from(self.body.clone());
 
         if args.len() != self.args.len() {
@@ -75,14 +94,27 @@ impl<'a> Callable<'a> for RFunction<'a> {
                 contexes.last().unwrap().borrow().last_value.clone(),
             );
         }
-        // TODO: has_self
+        if self.has_new {
+            if let Some(VariableValue::Type(type_raw)) = parent {
+                let obj: RefCell<HashMap<String, VariableValue>> = RefCell::new(HashMap::new());
+                init_ctx.variables.insert(
+                    "self".to_string(),
+                    VariableValue::Instance(type_raw.clone(), obj.clone())
+                );
+                VariableValue::Instance(type_raw, obj)
+            } else {
+                unimplemented!();
+            }
+        } else {
+            // TODO: has_self
 
-        let mut contexes = contexes.clone();
-        contexes.push(Rc::new(RefCell::new(init_ctx)));
+            let mut contexes = contexes.clone();
+            contexes.push(Rc::new(RefCell::new(init_ctx)));
 
-        match self.body.borrow().instructions.last().unwrap() {
-            (RASTNode::Block(body), _) => interprete(body.clone(), contexes),
-            _ => panic!("Expected function body node to be a block"),
+            match self.body.borrow().instructions.last().unwrap() {
+                (RASTNode::Block(body), _) => interprete(body.clone(), contexes),
+                _ => panic!("Expected function body node to be a block"),
+            }
         }
     }
 }
@@ -92,12 +124,13 @@ impl<'a> Callable<'a> for RefCell<RFunction<'a>> {
         "<anonymous function>".to_string()
     }
 
-    fn call(
+    fn call_member(
         &self,
         args: Vec<VariableValue<'a>>,
         location: Location<'a>,
         contexes: &Vec<ContextRef<'a>>,
+        parent: Option<VariableValue<'a>>,
     ) -> VariableValue<'a> {
-        self.borrow().call(args, location, contexes)
+        self.borrow().call_member(args, location, contexes, parent)
     }
 }

@@ -36,4 +36,15 @@ impl<'a> RStruct<'a> {
             .push((RASTNode::Block(body), loc));
         self.interpretations.push((to, init));
     }
+
+    pub fn get_method(&self, name: String) -> Option<RPatRef<'a>> {
+        if let Some(ctx) = &self.context {
+            for pattern in &ctx.borrow().patterns {
+                if pattern.get_name() == name {
+                    return Some(pattern.clone())
+                }
+            }
+        }
+        None
+    }
 }

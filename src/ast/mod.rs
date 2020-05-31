@@ -1,7 +1,6 @@
 pub mod define;
 pub mod expr;
 pub mod function;
-pub mod internal;
 pub mod node;
 pub mod pattern;
 pub mod resolve;

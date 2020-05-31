@@ -16,6 +16,7 @@ pub use r#struct::*;
 use std::cell::RefCell;
 use std::rc::Weak;
 pub use variable::*;
+use crate::internal;
 
 /** Resolved abstract syntax tree (RAST): an AST referencing itself through its variables, functions, etc.
 This resolved AST has all of its variables, patterns, etc. resolved (ie. they all point to their value's respective memory location).

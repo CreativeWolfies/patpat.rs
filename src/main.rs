@@ -7,6 +7,8 @@ pub mod interpreter;
 pub mod location;
 pub mod parser;
 pub mod test;
+pub mod internal;
+
 use ast::resolve;
 pub use location::Location;
 

@@ -31,7 +31,7 @@ impl<'a> From<(Function<'a>, RASTWeak<'a>, Location<'a>)> for RFunction<'a> {
                 .variables
                 .push(Rc::new(RefCell::new(RSymbol::new(String::from("lhs")))));
         }
-        if function.has_self {
+        if function.has_self || function.has_new {
             init.borrow_mut()
                 .variables
                 .push(Rc::new(RefCell::new(RSymbol::new(String::from("self")))));

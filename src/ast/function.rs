@@ -7,6 +7,7 @@ pub struct Function<'a> {
     pub body: AST<'a>,
     pub has_self: bool,
     pub has_lhs: bool,
+    pub has_new: bool,
 }
 
 impl<'a> Function<'a> {
@@ -26,6 +27,7 @@ impl<'a> Function<'a> {
                 let body = AST::parse(raw_body, ASTKind::Block);
                 let mut has_self = false;
                 let mut has_lhs = false;
+                let mut has_new = false;
                 let mut args = Vec::<FunctionArg>::new();
                 let mut visited = Vec::<(ASTNode, Location)>::new();
                 for (raw_arg, location) in tuple.instructions {
@@ -41,23 +43,7 @@ impl<'a> Function<'a> {
                         ASTNode::PatternCall(name, _args) => {
                             if name == "#self" {
                                 if has_self {
-                                    let mut err = CompError::new(
-                                        104,
-                                        String::from("Duplicate #self() in pattern declaration"),
-                                        CompLocation::from(&location),
-                                    );
-                                    for (r, l) in visited.into_iter() {
-                                        if let ASTNode::PatternCall(n, _) = r {
-                                            if n == "#self" {
-                                                err.add_info(CompInfo::new(
-                                                    String::from("#self() is used here"),
-                                                    CompLocation::from(l),
-                                                ));
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    err.print_and_exit();
+                                    error_double_flag(name, visited, location);
                                 } else if !is_pattern {
                                     CompError::new(
                                         105,
@@ -72,32 +58,31 @@ impl<'a> Function<'a> {
                                 }
                             } else if name == "#lhs" {
                                 if has_lhs {
-                                    let mut err = CompError::new(
-                                        106,
-                                        String::from("Duplicate #lhs() in function declaration"),
-                                        CompLocation::from(&location),
-                                    );
-                                    for (r, l) in visited.into_iter() {
-                                        if let ASTNode::PatternCall(n, _) = r {
-                                            if n == "#lhs" {
-                                                err.add_info(CompInfo::new(
-                                                    String::from("#lhs() is used here"),
-                                                    CompLocation::from(l),
-                                                ));
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    err.print_and_exit();
+                                    error_double_flag(name, visited, location);
                                 } else {
                                     has_lhs = true;
                                 }
+                            } else if name == "#new" {
+                                if has_new {
+                                    error_double_flag(name, visited, location);
+                                } else if !is_pattern {
+                                    CompError::new(
+                                        105,
+                                        String::from(
+                                            "#new() can only be used as a pattern's argument",
+                                        ),
+                                        CompLocation::from(&location),
+                                    )
+                                    .print_and_exit();
+                                } else {
+                                    has_new = true;
+                                }
                             } else {
                                 CompError::new(
-                  12,
-                  String::from("Invalid argument in function definition: unrecognized pattern"),
-                  CompLocation::from(location)
-                ).print_and_exit();
+                                    12,
+                                    String::from("Invalid argument in function definition: unrecognized pattern"),
+                                    CompLocation::from(location)
+                                    ).print_and_exit();
                             }
                         }
                         _ => {
@@ -116,6 +101,7 @@ impl<'a> Function<'a> {
                     body,
                     has_self,
                     has_lhs,
+                    has_new,
                 })
             }
             _ => None,
@@ -127,4 +113,24 @@ impl<'a> Function<'a> {
 pub struct FunctionArg {
     pub argtype: Option<Type>,
     pub name: String,
+}
+
+fn error_double_flag(name: &str, visited: Vec<(ASTNode<'_>, Location<'_>)>, location: Location<'_>) -> ! {
+    let mut err = CompError::new(
+        104,
+        format!("Duplicate flag {} in pattern declaration", name),
+        CompLocation::from(&location),
+    );
+    for (r, l) in visited.into_iter() {
+        if let ASTNode::PatternCall(n, _) = r {
+            if n == name {
+                err.add_info(CompInfo::new(
+                    format!("{} is used here", name),
+                    CompLocation::from(l),
+                ));
+                break;
+            }
+        }
+    }
+    err.print_and_exit();
 }

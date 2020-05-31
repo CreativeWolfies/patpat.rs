@@ -23,8 +23,8 @@
 101: Unexpected ')'
 102: Unexpected '}'
 103: Invalid string
-104: Duplicate #self()
-105: #self() in standalone function
+104: Duplicate function flag
+105: #self()/#new() in standalone function
 106: Duplicate #lhs()
 107: No operator precedence
 108: Cannot define this kind of expression

@@ -1,18 +1,22 @@
 A: struct {
   let x
   'create: (#new()) => {
-    // self.x: 0
+    self.x: 0
   }
 }
 
 B: struct {
   let x
   'create: (#new()) => {
-    // self.x: 1
+    self.x: 1
+  }
+  'hello: (#self()) => {
+    #println("Hello, my (x) is " + (self.x) + "!")
   }
 }
 
 let a: A.'create()
+let b: B.'create()
 
-#println(a)
 #println("a.x = " + (a.x))
+#println("b.x = " + (b.x))

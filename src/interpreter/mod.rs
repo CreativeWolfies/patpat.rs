@@ -82,6 +82,20 @@ pub fn interprete_instruction<'a, 'b>(
         RASTNode::Pattern(pat) => VariableValue::Function(pat.clone()),
         RASTNode::Function(fun) => VariableValue::Function(fun.clone()),
         RASTNode::TypeName(x) => VariableValue::Type(x.clone()),
+        RASTNode::ComplexDef(expr, member, value) => {
+            if let DefineMember::Member(name) = member {
+                if let VariableValue::Instance(_t, vars) = interprete_expression(expr, location.clone(), contexes) {
+                    // TODO: check that `name` is part of _t
+                    let res = vars.borrow().get(name).map(|x| x.clone()).unwrap_or(VariableValue::Nil);
+                    vars.borrow_mut().insert(name.clone(), interprete_instruction(value, location, contexes));
+                    res
+                } else {
+                    panic!("Trying to set value on non-object");
+                }
+            } else {
+                unimplemented!("DefineMember::*");
+            }
+        }
         _ => VariableValue::Nil,
     }
 }

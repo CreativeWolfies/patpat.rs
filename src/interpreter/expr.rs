@@ -1,6 +1,5 @@
 use super::*;
 use token::Operator;
-use std::collections::HashMap;
 
 pub trait BinaryOp<'a, T> {
     fn binary_op(self: Self, b: T, op: &Operator, loc: Location<'a>) -> VariableValue<'a>;
@@ -14,7 +13,6 @@ pub enum ExprValue<'a> {
     Value(VariableValue<'a>),
     Member(String),
     MethodCall(String, RASTRef<'a>),
-    Access(RefCell<HashMap<String, VariableValue<'a>>>, String),
 }
 
 /// Executes the expression and returns the remaining ExprValue stack
@@ -39,7 +37,7 @@ pub fn interprete_expression_int<'a>(
                 Operator::Interpretation => unimplemented!(),
                 Operator::MemberAccessor => {
                     let right = stack.pop().unwrap();
-                    let left = resolve_access(stack.pop().unwrap());
+                    let left = stack.pop().unwrap();
                     match left {
                         ExprValue::Value(VariableValue::Function(fun)) => {
                             let args = match right {
@@ -78,7 +76,7 @@ pub fn interprete_expression_int<'a>(
                         },
                         ExprValue::Value(VariableValue::Instance(t, vars)) => {
                             match right {
-                                ExprValue::Member(name) => stack.push(ExprValue::Access(vars, name)),
+                                ExprValue::Member(name) => stack.push(ExprValue::Value(resolve_access(vars, name))),
                                 ExprValue::MethodCall(name, args) => {
                                     if let Some(fun) = t.borrow().get_method(name) {
                                         stack.push(ExprValue::Value(
@@ -127,7 +125,7 @@ pub fn interprete_expression<'a>(
     location: Location<'a>,
     contexes: &Vec<ContextRef<'a>>,
 ) -> VariableValue<'a> {
-    match interprete_expression_int(expr, location, contexes).pop().map(|x| resolve_access(x)) {
+    match interprete_expression_int(expr, location, contexes).pop() {
         Some(ExprValue::Value(val)) => val,
         _ => VariableValue::Nil,
     }
@@ -140,7 +138,7 @@ pub fn execute_bin_op<'a>(
     op: &Operator,
     location: Location<'a>,
 ) -> ExprValue<'a> {
-    match resolve_access(a) {
+    match a {
         ExprValue::Value(a_val) => match b {
             ExprValue::Value(b_val) => ExprValue::Value(a_val.binary_op(b_val, op, location)),
             _ => unimplemented!(),
@@ -161,9 +159,6 @@ pub fn execute_unary_op<'a>(
     }
 }
 
-fn resolve_access<'a>(from: ExprValue<'a>) -> ExprValue<'a> {
-    match from {
-        ExprValue::Access(vars, name) => ExprValue::Value(vars.borrow().get(&name).map(|x| x.clone()).unwrap_or(VariableValue::Nil)),
-        x => x,
-    }
+fn resolve_access<'a>(obj: InstanceRef<'a>, name: String) -> VariableValue<'a> {
+    obj.borrow().get(&name).map(|x| x.clone()).unwrap_or(VariableValue::Nil)
 }

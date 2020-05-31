@@ -4,12 +4,14 @@ use std::collections::HashMap;
 use std::fmt;
 use token::Operator;
 
+pub type InstanceRef<'a> = Rc<RefCell<HashMap<String, VariableValue<'a>>>>;
+
 #[derive(Debug, Clone)]
 pub enum VariableValue<'a> {
     String(String),
     Number(f64),
     Boolean(bool),
-    Instance(RStructRef<'a>, RefCell<HashMap<String, VariableValue<'a>>>), // TODO
+    Instance(RStructRef<'a>, InstanceRef<'a>), // TODO
     Type(RStructRef<'a>),
     Tuple(Vec<VariableValue<'a>>),
     Function(Rc<(dyn Callable<'a> + 'a)>),

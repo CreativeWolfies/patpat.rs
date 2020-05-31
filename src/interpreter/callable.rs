@@ -96,11 +96,20 @@ impl<'a> Callable<'a> for RFunction<'a> {
         }
         if self.has_new {
             if let Some(VariableValue::Type(type_raw)) = parent {
-                let obj: RefCell<HashMap<String, VariableValue>> = RefCell::new(HashMap::new());
+                let obj: InstanceRef<'_> = Rc::new(RefCell::new(HashMap::new()));
                 init_ctx.variables.insert(
                     "self".to_string(),
                     VariableValue::Instance(type_raw.clone(), obj.clone())
                 );
+
+                let mut contexes = contexes.clone();
+                contexes.push(Rc::new(RefCell::new(init_ctx)));
+
+                match self.body.borrow().instructions.last().unwrap() {
+                    (RASTNode::Block(body), _) => interprete(body.clone(), contexes),
+                    _ => panic!("Expected function body node to be a block"),
+                };
+
                 VariableValue::Instance(type_raw, obj)
             } else {
                 unimplemented!();

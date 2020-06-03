@@ -25,16 +25,39 @@ pub fn interprete_expression_int<'a>(
     for term in &expr.terms {
         match term {
             RExprTerm::Push(node) => stack.push(match node {
-                RASTNode::MethodCall(name, body) => ExprValue::MethodCall(name.clone(), body.clone()),
+                RASTNode::MethodCall(name, body) => {
+                    ExprValue::MethodCall(name.clone(), body.clone())
+                }
                 RASTNode::Member(name) => ExprValue::Member(name.clone()),
-                x => ExprValue::Value(interprete_instruction(
-                    x,
-                    location.clone(),
-                    contexes,
-                )
-            )}),
+                x => ExprValue::Value(interprete_instruction(x, location.clone(), contexes)),
+            }),
             RExprTerm::Op(op) => match op {
-                Operator::Interpretation => unimplemented!(),
+                Operator::Interpretation => {
+                    let right = stack.pop().unwrap();
+                    let left = stack.pop().unwrap();
+                    if let ExprValue::Value(VariableValue::Type(into)) = right {
+                        if let ExprValue::Value(VariableValue::Instance(of, values)) = left {
+                            let interpretation = of
+                                .borrow()
+                                .interpretations
+                                .iter()
+                                .find(|x| x.0.upgrade().map(|y| *y == *into).unwrap_or(false))
+                                .unwrap_or_else(|| panic!("Couldn't find interpretation"))
+                                .clone();
+
+                            stack.push(ExprValue::Value(
+                                interpretation::interprete_interpretation(
+                                    VariableValue::Instance(of.clone(), values),
+                                    interpretation.clone(),
+                                ),
+                            ));
+                        } else {
+                            unimplemented!("Casting non-struct-instances to other objects is not yet supported");
+                        }
+                    } else {
+                        unimplemented!();
+                    }
+                }
                 Operator::MemberAccessor => {
                     let right = stack.pop().unwrap();
                     let left = stack.pop().unwrap();
@@ -43,61 +66,63 @@ pub fn interprete_expression_int<'a>(
                             let args = match right {
                                 ExprValue::Value(VariableValue::Tuple(vec)) => vec,
                                 ExprValue::Value(x) => vec![x],
-                                _ => unimplemented!()
+                                _ => unimplemented!(),
                             };
                             stack.push(ExprValue::Value(fun.call(
                                 args,
                                 location.clone(),
                                 contexes,
                             )));
-                        },
+                        }
                         ExprValue::Value(VariableValue::Type(t)) => {
                             match right {
                                 ExprValue::Member(_name) => unimplemented!(),
                                 ExprValue::MethodCall(name, args) => {
                                     if let Some(fun) = t.borrow().get_method(name) {
-                                        stack.push(ExprValue::Value(
-                                            fun.call_member(
-                                                match interprete(args, contexes.clone()) {
-                                                    VariableValue::Tuple(list) => list,
-                                                    x => vec![x],
-                                                },
-                                                location.clone(),
-                                                contexes,
-                                                Some(VariableValue::Type(t.clone())),
-                                            )
-                                        ));
+                                        stack.push(ExprValue::Value(fun.call_member(
+                                            match interprete(args, contexes.clone()) {
+                                                VariableValue::Tuple(list) => list,
+                                                x => vec![x],
+                                            },
+                                            location.clone(),
+                                            contexes,
+                                            Some(VariableValue::Type(t.clone())),
+                                        )));
                                     } else {
                                         unimplemented!(); // TODO: error
                                     }
-                                },
-                                _ => unimplemented!()
-                            }
-                        },
-                        ExprValue::Value(VariableValue::Instance(t, vars)) => {
-                            match right {
-                                ExprValue::Member(name) => stack.push(ExprValue::Value(resolve_access(vars, name))),
-                                ExprValue::MethodCall(name, args) => {
-                                    if let Some(fun) = t.borrow().get_method(name) {
-                                        stack.push(ExprValue::Value(
-                                            fun.call_member(
-                                                match interprete(args, contexes.clone()) {
-                                                    VariableValue::Tuple(list) => list,
-                                                    x => vec![x],
-                                                },
-                                                location.clone(),
-                                                contexes,
-                                                Some(VariableValue::Instance(t.clone(), vars.clone())),
-                                            )
-                                        ));
-                                    } else {
-                                        unimplemented!(); // TODO: error
-                                    }
-                                },
+                                }
                                 _ => unimplemented!(),
                             }
                         }
-                        _ => unimplemented!(),
+                        ExprValue::Value(VariableValue::Instance(t, vars)) => {
+                            match right {
+                                ExprValue::Member(name) => {
+                                    stack.push(ExprValue::Value(resolve_access(vars, name)))
+                                }
+                                ExprValue::MethodCall(name, args) => {
+                                    if let Some(fun) = t.borrow().get_method(name.clone()) {
+                                        stack.push(ExprValue::Value(fun.call_member(
+                                            match interprete(args, contexes.clone()) {
+                                                VariableValue::Tuple(list) => list,
+                                                x => vec![x],
+                                            },
+                                            location.clone(),
+                                            contexes,
+                                            Some(VariableValue::Instance(t.clone(), vars.clone())),
+                                        )));
+                                    } else {
+                                        unimplemented!(
+                                            "Cannot find method {} in {}",
+                                            name,
+                                            t.borrow().name.clone()
+                                        ); // TODO: error
+                                    }
+                                }
+                                _ => unimplemented!(),
+                            }
+                        }
+                        _ => unimplemented!("Cannot access member of {:?}", left),
                     }
                 }
                 Operator::Not => {
@@ -160,5 +185,8 @@ pub fn execute_unary_op<'a>(
 }
 
 fn resolve_access<'a>(obj: InstanceRef<'a>, name: String) -> VariableValue<'a> {
-    obj.borrow().get(&name).map(|x| x.clone()).unwrap_or(VariableValue::Nil)
+    obj.borrow()
+        .get(&name)
+        .map(|x| x.clone())
+        .unwrap_or(VariableValue::Nil)
 }

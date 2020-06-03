@@ -1,22 +1,29 @@
 A: struct {
-  let x
+  let name
+
   'create: (#new()) => {
-    self.x: 0
+    self.name: "A"
   }
 }
 
 B: struct {
-  let x
+  let name
+
   'create: (#new()) => {
-    self.x: 1
+    self.name: "B"
   }
+
   'hello: (#self()) => {
-    #println("Hello, my (x) is " + (self.x) + "!")
+    #println("Hello, I am an instance of " + (self.name) + "!")
   }
+}
+
+A -> B: {
+  to.name: from.name
 }
 
 let a: A.'create()
 let b: B.'create()
 
-#println("a.x = " + (a.x))
-#println("b.x = " + (b.x))
+(a -> B).'hello()
+b.'hello()

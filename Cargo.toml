@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 regex = "1"
 colored = "1.9.3"
+rusty_ulid = "0.9.3"

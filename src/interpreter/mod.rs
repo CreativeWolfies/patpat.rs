@@ -6,6 +6,7 @@ pub mod callable;
 pub mod context;
 pub mod expr;
 pub mod value;
+pub mod interpretation;
 
 pub use callable::*;
 pub use context::*;

@@ -1,7 +1,9 @@
 use super::*;
+use rusty_ulid::Ulid;
 
 #[derive(Debug, Clone)]
 pub struct RStruct<'a> {
+    id: u128,
     pub name: TypeName,
     pub context: Option<RASTRef<'a>>,
     pub interpretations: Vec<(RStructWeak<'a>, RASTRef<'a>)>,
@@ -10,6 +12,7 @@ pub struct RStruct<'a> {
 impl<'a> RStruct<'a> {
     pub fn new(name: TypeName) -> RStruct<'a> {
         RStruct {
+            id: Ulid::generate().into(),
             name: name,
             context: None,
             interpretations: Vec::new(),
@@ -46,5 +49,11 @@ impl<'a> RStruct<'a> {
             }
         }
         None
+    }
+}
+
+impl<'a> PartialEq for RStruct<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
     }
 }

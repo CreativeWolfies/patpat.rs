@@ -30,6 +30,10 @@ fn main() {
         contents: raw,
     };
 
+    if let Some(_) = args.iter().find(|x| **x == String::from("--error")) {
+        error::COMPERROR_EXIT.with(|e| *e.borrow_mut() = false);
+    }
+
     let parsed = parser::parse(&src_file);
     if let Some(_) = args.iter().find(|x| **x == String::from("--dump-parsed")) {
         println!("{:#?}", parsed);

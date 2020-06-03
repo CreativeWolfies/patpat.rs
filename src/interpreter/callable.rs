@@ -112,10 +112,17 @@ impl<'a> Callable<'a> for RFunction<'a> {
 
                 VariableValue::Instance(type_raw, obj)
             } else {
-                unimplemented!();
+                unimplemented!("Non-struct #new() is not supported yet!");
             }
         } else {
             // TODO: has_self
+
+            if self.has_self {
+                init_ctx.variables.insert(
+                    "self".to_string(),
+                    parent.unwrap()
+                );
+            }
 
             let mut contexes = contexes.clone();
             contexes.push(Rc::new(RefCell::new(init_ctx)));

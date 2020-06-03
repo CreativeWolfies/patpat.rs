@@ -30,9 +30,10 @@
 108: Cannot define this kind of expression
 
 151: Unknown symbol
-152: Unknown pattern
+152: Unknown pattern/method
 153: Unknown struct
 
 201: Mixed types in expression
 202: Invalid operator in expression
 203: Mismatching number of arguments
+204: Casting to non-type

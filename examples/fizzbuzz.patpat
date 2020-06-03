@@ -1,0 +1,19 @@
+// FizzBuzz example in PatPat
+
+// Loop for n ranging between 1 and 16 (16 included)
+#for(1, 16, (n) => {
+  // Prints what the following block outputs
+  #println({
+    // If n is a multiple of 3,
+    #if((n % 3) == 0, () => {
+      // Check if it is also a multiple of 5; return "fizzbuzz" if so
+      #if((n % 5) == 0, "fizzbuzz")
+      // Otherwise, return only "fizz"
+      #else("fizz")
+    })
+    // If n isn't a multiple of 3, check if it's a multiple of 5; return "buzz" if so
+    #elseif((n % 5) == 0, "buzz")
+    // Otherwise, return the number itself
+    #else(n)
+  })
+})

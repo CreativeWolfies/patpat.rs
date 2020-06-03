@@ -122,7 +122,7 @@ pub fn interprete_expression_int<'a>(
                                         CompLocation::from(location)
                                     ).print_and_exit(),
                                 ExprValue::MethodCall(name, args) => {
-                                    if let Some(fun) = t.borrow().get_method(name) {
+                                    if let Some(fun) = t.borrow().get_method(name.clone()) {
                                         stack.push(ExprValue::Value(fun.call_member(
                                             match interprete(args, contexes.clone()) {
                                                 VariableValue::Tuple(list) => list,
@@ -166,7 +166,7 @@ pub fn interprete_expression_int<'a>(
                                     } else {
                                         CompError::new(
                                             152,
-                                            format!("Cannot find method {} in object", name, t.borrow().name.clone()),
+                                            format!("Cannot find method {} in object of type {}.", name, t.borrow().name.clone()),
                                             CompLocation::from(location)
                                         ).print_and_exit();
                                     }
@@ -178,7 +178,7 @@ pub fn interprete_expression_int<'a>(
                                 ).print_and_exit(),
                             }
                         }
-                        _ => _ => CompError::new(
+                        _ => CompError::new(
                             1,
                             format!("Accessing members of this data type is not yet supported!"),
                             CompLocation::from(location)

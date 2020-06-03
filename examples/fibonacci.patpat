@@ -1,0 +1,31 @@
+// This program prints the Fibonacci sequence out, up to `steps` steps
+
+// Variable initialization
+let steps: 10
+
+let count: 0
+let a: 1
+let b: 1
+
+// Print the initial 1
+#println(a)
+
+// Loops for a while...
+#loop(() => {
+  // sets b' to a + b
+  // sets a' to b
+  // This is similar to what is described in https://tutorial.ponylang.io/types/classes.html#functions
+  a: b: a + b
+
+  // prints out the new value of `a`
+  #println(a)
+
+  // increments the count
+  count: count + 1
+
+  // What a weird if: it will return nothing if `count < step` succeeds,
+  // but it will return `[bail]` if its condition yields false.
+  // #loop() loops until the given callback yields `[bail]`
+  // Thus, if count >= steps, the loop will end
+  #if(count < steps, ())
+})

@@ -8,6 +8,21 @@ use super::error::{CompError, CompLocation};
 use crate::{Location, SrcFile};
 use token::{Token, TokenTree};
 
+/** Parses a given file and outputs its token tree's root node.
+
+    For example,
+
+    ```
+    let x: 3
+    ```
+
+    Outputs:
+
+    TokenTree {
+        tokens: [Let, Symbol(x), Define, Number(3.0)],
+        kind: TokenTreeRoot,
+    }
+**/
 pub fn parse<'a>(file: &'a SrcFile) -> TokenTree<'a> {
     let raw = &file.contents;
     let lines: Vec<&str> = raw.lines().collect();
@@ -75,11 +90,40 @@ pub fn parse<'a>(file: &'a SrcFile) -> TokenTree<'a> {
     }
 }
 
+/** Constructs an AST out of a parsed TokenTree
+
+    For example,
+
+    TokenTree {
+        tokens: [Let, Symbol(x), Define, Number(3.0)],
+        kind: TokenTreeRoot,
+    }
+
+    Outputs:
+
+    AST {
+        instructions: [VariableInit(x, Number(3.0))],
+        kind: File
+    }
+**/
 pub fn construct<'a>(parsed: TokenTree<'a>) -> AST<'a> {
     let ast = AST::parse(parsed, ASTKind::File);
     ast
 }
 
+/** Attempts to match a TokenTree term. On success, it appends it to `token_stack`
+    @param file - The current source file
+    @param line_index - The current line of code
+    @param char_index - The current char within that line of code
+    @param trimmed_line - The trimmed line; it is gradually trimmed after each successful match
+    @param token_stack - The token stack: contains the openned blocks, tuples, etc.
+    @param regexes - The set of regexes to match with
+
+    The matching process is done by trying to match the source to each term matcher (parsed down into `regexes`).
+    Strings and nesting is also handled by this function. Nesting uses `token_stack`, which grows as we get more and more nested and decreases whenever a block or tuple ends.
+
+    <!-- (Thanks to @PhirosWolf for having helped me with this) -->
+**/
 fn match_next_term<'a>(
     file: &'a SrcFile,
     line_index: usize,
@@ -88,11 +132,6 @@ fn match_next_term<'a>(
     token_stack: &mut Vec<TokenTree<'a>>,
     regexes: &Vec<(token::Kind, Regex)>,
 ) -> bool {
-    /*! Tries to match a term; it does this by trying to match with each term `MATCHER`.
-     * String, blocks are handled by this. Block and tuple nesting are done using a "token stack", which grows as the nesting goes on.
-     * This way, the algorithm can keep a linear approach to the code parsing.
-     * <!-- (thanks to @PhirosWolf for having helped me with this) -->
-     */
     let raw: &str = &file.contents;
     let mut res = false; // wether or not a match occured
     for matcher in regexes.iter() {

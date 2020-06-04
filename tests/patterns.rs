@@ -76,3 +76,13 @@ fn r#for() {
         test::execute(test::compile(&src))
     );
 }
+
+#[test]
+fn closure() {
+    test::init_testenv();
+    let src = test::load("test/patterns/closure.patpat");
+    assert_eq!(
+        VariableValue::Number(0.5f64),
+        test::execute(test::compile(&src))
+    );
+}

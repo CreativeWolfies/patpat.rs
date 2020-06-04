@@ -5,8 +5,8 @@ use std::ops::Deref;
 pub mod callable;
 pub mod context;
 pub mod expr;
-pub mod value;
 pub mod interpretation;
+pub mod value;
 
 pub use callable::*;
 pub use context::*;
@@ -57,12 +57,17 @@ pub fn interprete_instruction<'a, 'b>(
                 .collect(),
         ),
         RASTNode::VariableDef(var, value) => {
-            let res = with_variable(var, contexes, |var| var.clone());
+            let res = with_variable(var, contexes, |var| var.clone(), location.clone());
             let value = interprete_instruction(value.deref(), location.clone(), contexes);
-            with_variable(var, contexes, |var| {
-                *var = value;
-                VariableValue::Nil
-            });
+            with_variable(
+                var,
+                contexes,
+                |var| {
+                    *var = value;
+                    VariableValue::Nil
+                },
+                location.clone(),
+            );
             res
         }
         RASTNode::PatternCall(pat, args) => {
@@ -74,21 +79,38 @@ pub fn interprete_instruction<'a, 'b>(
                 },
                 location.clone(),
                 contexes,
+                vec![],
             )
         }
         RASTNode::Expression(expr) => interprete_expression(expr, location, contexes),
         RASTNode::Block(ast) => interprete(ast.clone(), contexes.clone()),
-        RASTNode::Variable(var) => with_variable(var, contexes, |var| var.clone()),
+        RASTNode::Variable(var) => with_variable(var, contexes, |var| var.clone(), location),
         RASTNode::Nil => VariableValue::Nil,
-        RASTNode::Pattern(pat) => VariableValue::Function(pat.clone()),
-        RASTNode::Function(fun) => VariableValue::Function(fun.clone()),
+        RASTNode::Pattern(pat) => VariableValue::Function(pat.clone(), vec![]),
+        RASTNode::Function(fun) => VariableValue::Function(
+            fun.clone(),
+            fun.borrow()
+                .closure
+                .iter()
+                .map(|(name, value)| (name.clone(), interprete(value.clone(), contexes.clone())))
+                .collect(),
+        ),
         RASTNode::TypeName(x) => VariableValue::Type(x.clone()),
         RASTNode::ComplexDef(expr, member, value) => {
             if let DefineMember::Member(name) = member {
-                if let VariableValue::Instance(_t, vars) = interprete_expression(expr, location.clone(), contexes) {
+                if let VariableValue::Instance(_t, vars) =
+                    interprete_expression(expr, location.clone(), contexes)
+                {
                     // TODO: check that `name` is part of _t
-                    let res = vars.borrow().get(name).map(|x| x.clone()).unwrap_or(VariableValue::Nil);
-                    vars.borrow_mut().insert(name.clone(), interprete_instruction(value, location, contexes));
+                    let res = vars
+                        .borrow()
+                        .get(name)
+                        .map(|x| x.clone())
+                        .unwrap_or(VariableValue::Nil);
+                    vars.borrow_mut().insert(
+                        name.clone(),
+                        interprete_instruction(value, location, contexes),
+                    );
                     res
                 } else {
                     panic!("Trying to set value on non-object");
@@ -105,6 +127,7 @@ pub fn with_variable<'a, F>(
     variable: &RSymRef,
     contexes: &Vec<ContextRef<'a>>,
     func: F,
+    location: Location<'a>,
 ) -> VariableValue<'a>
 where
     F: FnOnce(&mut VariableValue<'a>) -> VariableValue<'a>,
@@ -122,9 +145,19 @@ where
                 .get_mut(&variable.name)
                 .map(|mut x| func(&mut x))
                 .unwrap_or_else(|| {
-                    panic!("Variable {} not found at depth {}!", variable.name, depth)
+                    CompError::new(
+                        1,
+                        format!("Variable {} not found at depth {}!", variable.name, depth),
+                        location.into(),
+                    )
+                    .print_and_exit();
                 });
         }
     }
-    panic!("Couldn't find context at depth {}!", depth);
+    CompError::new(
+        1,
+        format!("Couldn't find context at depth {}!", depth),
+        location.into(),
+    )
+    .print_and_exit();
 }

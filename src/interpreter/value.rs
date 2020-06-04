@@ -14,7 +14,10 @@ pub enum VariableValue<'a> {
     Instance(RStructRef<'a>, InstanceRef<'a>), // TODO
     Type(RStructRef<'a>),
     Tuple(Vec<VariableValue<'a>>),
-    Function(Rc<(dyn Callable<'a> + 'a)>),
+    Function(
+        Rc<(dyn Callable<'a> + 'a)>,
+        Vec<(String, VariableValue<'a>)>,
+    ),
     Nil,
     Bail,
 }
@@ -37,7 +40,7 @@ impl<'a> fmt::Display for VariableValue<'a> {
             ),
             VariableValue::Nil => write!(f, "nil"),
             VariableValue::Bail => write!(f, "bail"),
-            VariableValue::Function(fun) => write!(f, "[function {}]", fun.get_name()),
+            VariableValue::Function(fun, _) => write!(f, "[function {}]", fun.get_name()),
         }
     }
 }
@@ -88,7 +91,7 @@ impl<'a> PartialEq for VariableValue<'a> {
                 }
             }
             VariableValue::Instance(_, _) => false, // instance comparison is not yet supported
-            VariableValue::Function(_) => false,    // function comparison is not yet supported
+            VariableValue::Function(_, _) => false, // function comparison is not yet supported
             VariableValue::Type(_) => false,        // type comparison is not yet supported
         }
     }
@@ -108,7 +111,7 @@ impl<'a> BinaryOp<'a, Self> for VariableValue<'a> {
                     VariableValue::Boolean(y) => x.binary_op(y, op, loc),
                     VariableValue::Nil => x.binary_op("nil".to_string(), op, loc),
                     VariableValue::Bail => x.binary_op("bail".to_string(), op, loc),
-                    VariableValue::Function(y) => {
+                    VariableValue::Function(y, _) => {
                         x.binary_op(format!("[function {}]", y.get_name()), op, loc)
                     }
                     VariableValue::Type(y) => {
@@ -147,28 +150,27 @@ impl<'a> BinaryOp<'a, Self> for VariableValue<'a> {
                     }
                     _ => err_mixed_types(loc),
                 },
-                VariableValue::Function(x) => {
+                VariableValue::Function(x, _) => {
                     if let VariableValue::String(y) = b {
                         format!("[function {}]", x.get_name()).binary_op(y, op, loc)
                     } else {
                         err_invalid_op(loc)
                     }
-                },
+                }
                 VariableValue::Type(x) => {
                     if let VariableValue::String(y) = b {
                         format!("[{} type]", x.borrow().name).binary_op(y, op, loc)
                     } else {
                         err_invalid_op(loc)
                     }
-                },
+                }
                 VariableValue::Instance(x, _) => {
                     if let VariableValue::String(y) = b {
                         format!("[{} instance]", x.borrow().name).binary_op(y, op, loc)
                     } else {
                         err_invalid_op(loc)
                     }
-                },
-                // _ => unimplemented!(),
+                } // _ => unimplemented!(),
             }
         }
     }

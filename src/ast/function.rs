@@ -8,6 +8,7 @@ pub struct Function<'a> {
     pub has_self: bool,
     pub has_lhs: bool,
     pub has_new: bool,
+    pub closure: Vec<(String, AST<'a>)>,
 }
 
 impl<'a> Function<'a> {
@@ -30,6 +31,7 @@ impl<'a> Function<'a> {
                 let mut has_new = false;
                 let mut args = Vec::<FunctionArg>::new();
                 let mut visited = Vec::<(ASTNode, Location)>::new();
+                let mut closure = Vec::<(String, AST)>::new();
                 for (raw_arg, location) in tuple.instructions {
                     match &raw_arg {
                         ASTNode::Variable(name) => args.push(FunctionArg {
@@ -40,7 +42,7 @@ impl<'a> Function<'a> {
                             argtype: Some(argtype.clone()),
                             name: name.to_string(),
                         }),
-                        ASTNode::PatternCall(name, _args) => {
+                        ASTNode::PatternCall(name, args) => {
                             if name == "#self" {
                                 if has_self {
                                     error_double_flag(name, visited, location);
@@ -77,12 +79,46 @@ impl<'a> Function<'a> {
                                 } else {
                                     has_new = true;
                                 }
+                            } else if name == "#with" {
+                                if args.instructions.len() == 1 {
+                                    if let (ASTNode::Variable(name), loc) = &args.instructions[0] {
+                                        closure.push((name.clone(), AST {
+                                            instructions: vec![(ASTNode::Variable(name.clone()), loc.clone())],
+                                            kind: ASTKind::Block
+                                        }));
+                                    } else {
+                                        CompError::new(
+                                            12,
+                                            String::from("Invalid argument in function definition: #with(name) takes as argument a variable."),
+                                            location.into()
+                                        ).print_and_exit();
+                                    }
+                                } else if args.instructions.len() == 2 {
+                                    if let (ASTNode::Variable(name), _) = &args.instructions[0] {
+                                        closure.push((name.clone(), AST {
+                                            instructions: vec![args.instructions[1].clone()],
+                                            kind: ASTKind::Block
+                                        }));
+                                    } else {
+                                        CompError::new(
+                                            12,
+                                            String::from("Invalid argument in function definition: #with(name, value) takes as first argument a variable."),
+                                            location.into()
+                                        ).print_and_exit();
+                                    }
+                                } else {
+                                    CompError::new(
+                                        12,
+                                        format!("Invalid argument in function definition: expected #with to take either 1 or 2 parameters; got {}.", args.instructions.len()),
+                                        location.into()
+                                    ).print_and_exit();
+                                }
                             } else {
                                 CompError::new(
                                     12,
                                     String::from("Invalid argument in function definition: unrecognized pattern"),
                                     CompLocation::from(location)
-                                    ).print_and_exit();
+                                ).print_and_exit();
                             }
                         }
                         _ => {
@@ -102,6 +138,7 @@ impl<'a> Function<'a> {
                     has_self,
                     has_lhs,
                     has_new,
+                    closure,
                 })
             }
             _ => None,

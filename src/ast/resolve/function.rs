@@ -9,6 +9,7 @@ pub struct RFunction<'a> {
     pub has_self: bool,
     pub has_lhs: bool,
     pub has_new: bool,
+    pub closure: Vec<(String, RASTRef<'a>)>,
 }
 
 impl<'a> From<(Function<'a>, RASTWeak<'a>, Location<'a>)> for RFunction<'a> {
@@ -20,13 +21,24 @@ impl<'a> From<(Function<'a>, RASTWeak<'a>, Location<'a>)> for RFunction<'a> {
         let parent = input.1;
         let loc = input.2;
 
+        // TODO: prevent access to variables outside of functions
+        // TODO: prevent #with inside of patterns
         let init = Rc::new(RefCell::new(RAST::new(parent.clone(), ASTKind::Block)));
+        let mut closure = Vec::<(String, RASTRef<'a>)>::with_capacity(function.closure.len());
 
         for arg in function.args.iter() {
             init.borrow_mut()
                 .variables
                 .push(Rc::new(RefCell::new(RSymbol::new(arg.name.clone()))));
         }
+
+        for (name, value) in function.closure.into_iter() {
+            init.borrow_mut()
+                .variables
+                .push(Rc::new(RefCell::new(RSymbol::new(name.clone()))));
+            closure.push((name, RAST::resolve(value, parent.clone())));
+        }
+
         if function.has_lhs {
             init.borrow_mut()
                 .variables
@@ -54,6 +66,7 @@ impl<'a> From<(Function<'a>, RASTWeak<'a>, Location<'a>)> for RFunction<'a> {
             has_lhs: function.has_lhs,
             has_self: function.has_self,
             has_new: function.has_new,
+            closure,
         }
     }
 }

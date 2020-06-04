@@ -1,7 +1,7 @@
 use super::*;
 use std::cell::RefCell;
-use std::fmt;
 use std::collections::HashMap;
+use std::fmt;
 
 pub trait Callable<'a> {
     fn get_name(&self) -> String;
@@ -11,6 +11,7 @@ pub trait Callable<'a> {
         args: Vec<VariableValue<'a>>,
         location: Location<'a>,
         contexes: &Vec<ContextRef<'a>>,
+        closure: Vec<(String, VariableValue<'a>)>,
         parent: Option<VariableValue<'a>>,
     ) -> VariableValue<'a>;
 
@@ -23,8 +24,9 @@ pub trait Callable<'a> {
         args: Vec<VariableValue<'a>>,
         location: Location<'a>,
         contexes: &Vec<ContextRef<'a>>,
+        closure: Vec<(String, VariableValue<'a>)>,
     ) -> VariableValue<'a> {
-        self.call_member(args, location, contexes, None)
+        self.call_member(args, location, contexes, closure, None)
     }
 }
 
@@ -44,13 +46,14 @@ impl<'a> Callable<'a> for RPattern<'a> {
         args: Vec<VariableValue<'a>>,
         location: Location<'a>,
         contexes: &Vec<ContextRef<'a>>,
+        closure: Vec<(String, VariableValue<'a>)>,
         parent: Option<VariableValue<'a>>,
     ) -> VariableValue<'a> {
         self.function
             .borrow()
             .as_ref()
             .unwrap()
-            .call_member(args, location, contexes, parent)
+            .call_member(args, location, contexes, closure, parent)
     }
 }
 
@@ -65,6 +68,7 @@ impl<'a> Callable<'a> for RFunction<'a> {
         args: Vec<VariableValue<'a>>,
         location: Location<'a>,
         contexes: &Vec<ContextRef<'a>>,
+        closure: Vec<(String, VariableValue<'a>)>,
         parent: Option<VariableValue<'a>>,
     ) -> VariableValue<'a> {
         //! Asserts that contexes is not empty
@@ -88,6 +92,10 @@ impl<'a> Callable<'a> for RFunction<'a> {
             init_ctx.variables.insert(to.name.clone(), from);
         }
 
+        for (name, value) in closure.into_iter() {
+            init_ctx.variables.insert(name, value);
+        }
+
         if self.has_lhs {
             init_ctx.variables.insert(
                 "lhs".to_string(),
@@ -99,7 +107,7 @@ impl<'a> Callable<'a> for RFunction<'a> {
                 let obj: InstanceRef<'_> = Rc::new(RefCell::new(HashMap::new()));
                 init_ctx.variables.insert(
                     "self".to_string(),
-                    VariableValue::Instance(type_raw.clone(), obj.clone())
+                    VariableValue::Instance(type_raw.clone(), obj.clone()),
                 );
 
                 let mut contexes = contexes.clone();
@@ -118,10 +126,9 @@ impl<'a> Callable<'a> for RFunction<'a> {
             // TODO: has_self
 
             if self.has_self {
-                init_ctx.variables.insert(
-                    "self".to_string(),
-                    parent.unwrap()
-                );
+                init_ctx
+                    .variables
+                    .insert("self".to_string(), parent.unwrap());
             }
 
             let mut contexes = contexes.clone();
@@ -145,8 +152,10 @@ impl<'a> Callable<'a> for RefCell<RFunction<'a>> {
         args: Vec<VariableValue<'a>>,
         location: Location<'a>,
         contexes: &Vec<ContextRef<'a>>,
+        closure: Vec<(String, VariableValue<'a>)>,
         parent: Option<VariableValue<'a>>,
     ) -> VariableValue<'a> {
-        self.borrow().call_member(args, location, contexes, parent)
+        self.borrow()
+            .call_member(args, location, contexes, closure, parent)
     }
 }

@@ -1,0 +1,13 @@
+// A function which takes as input f: R² -> R, and returns g: (x, y) |-> f(y, x)
+
+'swap: (fn) => {
+  (x, y, #with(fn)) => {
+    fn.(y, x)
+  }
+}
+
+'div: (x, y) => {
+  x / y
+}
+
+'swap('div).(2, 1)

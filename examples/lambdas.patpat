@@ -1,0 +1,32 @@
+// Example of calling lambdas
+
+// A function which will repeatedly apply the function `fn` to its result:
+// fn(fn(fn(...fn(start_value)...)))
+'call_n_times: (fn, start_value, n) => {
+  let x: start_value
+  // Loop n times or until fn(x) yields [bail]
+  #for(1, n, (a) => {
+    x: fn.(x)
+    x
+  })
+  // The function will return what #for returns, that is, the last return value of `fn`
+}
+
+// Prints 2^3 = 8
+#println(
+  'call_n_times((x) => {x * 2}, 1, 3)
+)
+
+// The #if() will yield [bail] after 7 steps; it will cause the #for to stop and to return [bail]
+#println(
+  'call_n_times((x) => {#if(x < 100, x * 2)}, 1, 100)
+)
+
+// The Collatz Sequence with as input 27 takes 111 steps to reach 1
+// https://oeis.org/A006577
+#println(
+  'call_n_times((x) => {
+    #if((x % 2) == 0, x / 2)
+    #else((x * 3) + 1)
+  }, 27, 111)
+)

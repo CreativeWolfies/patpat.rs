@@ -90,99 +90,111 @@ pub fn interprete_expression_int<'a>(
                         CompError::new(
                             204,
                             "Trying to cast to a non-type".to_string(),
-                            CompLocation::from(location)
-                        ).print_and_exit();
+                            CompLocation::from(location),
+                        )
+                        .print_and_exit();
                     }
                 }
                 Operator::MemberAccessor => {
                     let right = stack.pop().unwrap();
                     let left = stack.pop().unwrap();
                     match left {
-                        ExprValue::Value(VariableValue::Function(fun)) => {
+                        ExprValue::Value(VariableValue::Function(fun, closure)) => {
                             let args = match right {
                                 ExprValue::Value(VariableValue::Tuple(vec)) => vec,
                                 ExprValue::Value(x) => vec![x],
                                 _ => CompError::new(
                                     1,
-                                    "Accessing a member of a function is not yet supported".to_string(),
-                                    CompLocation::from(location)
-                                ).print_and_exit(),
+                                    "Accessing a member of a function is not yet supported"
+                                        .to_string(),
+                                    CompLocation::from(location),
+                                )
+                                .print_and_exit(),
                             };
                             stack.push(ExprValue::Value(fun.call(
                                 args,
                                 location.clone(),
                                 contexes,
+                                closure,
                             )));
                         }
-                        ExprValue::Value(VariableValue::Type(t)) => {
-                            match right {
-                                ExprValue::Member(_name) => CompError::new(
-                                        1,
-                                        "Accessing a member of a type is not yet supported".to_string(),
-                                        CompLocation::from(location)
-                                    ).print_and_exit(),
-                                ExprValue::MethodCall(name, args) => {
-                                    if let Some(fun) = t.borrow().get_method(name.clone()) {
-                                        stack.push(ExprValue::Value(fun.call_member(
-                                            match interprete(args, contexes.clone()) {
-                                                VariableValue::Tuple(list) => list,
-                                                x => vec![x],
-                                            },
-                                            location.clone(),
-                                            contexes,
-                                            Some(VariableValue::Type(t.clone())),
-                                        )));
-                                    } else {
-                                        CompError::new(
-                                            152,
-                                            format!("Couldn't find method {} in object", name),
-                                            CompLocation::from(location)
-                                        ).print_and_exit()
-                                    }
+                        ExprValue::Value(VariableValue::Type(t)) => match right {
+                            ExprValue::Member(_name) => CompError::new(
+                                1,
+                                "Accessing a member of a type is not yet supported".to_string(),
+                                CompLocation::from(location),
+                            )
+                            .print_and_exit(),
+                            ExprValue::MethodCall(name, args) => {
+                                if let Some(fun) = t.borrow().get_method(name.clone()) {
+                                    stack.push(ExprValue::Value(fun.call_member(
+                                        match interprete(args, contexes.clone()) {
+                                            VariableValue::Tuple(list) => list,
+                                            x => vec![x],
+                                        },
+                                        location.clone(),
+                                        contexes,
+                                        vec![],
+                                        Some(VariableValue::Type(t.clone())),
+                                    )));
+                                } else {
+                                    CompError::new(
+                                        152,
+                                        format!("Couldn't find method {} in object", name),
+                                        CompLocation::from(location),
+                                    )
+                                    .print_and_exit()
                                 }
-                                _ => CompError::new(
-                                    1,
-                                    format!("Complex accessors are not yet supported!"),
-                                    CompLocation::from(location)
-                                ).print_and_exit(),
                             }
-                        }
-                        ExprValue::Value(VariableValue::Instance(t, vars)) => {
-                            match right {
-                                ExprValue::Member(name) => {
-                                    stack.push(ExprValue::Value(resolve_access(vars, name)))
-                                }
-                                ExprValue::MethodCall(name, args) => {
-                                    if let Some(fun) = t.borrow().get_method(name.clone()) {
-                                        stack.push(ExprValue::Value(fun.call_member(
-                                            match interprete(args, contexes.clone()) {
-                                                VariableValue::Tuple(list) => list,
-                                                x => vec![x],
-                                            },
-                                            location.clone(),
-                                            contexes,
-                                            Some(VariableValue::Instance(t.clone(), vars.clone())),
-                                        )));
-                                    } else {
-                                        CompError::new(
-                                            152,
-                                            format!("Cannot find method {} in object of type {}.", name, t.borrow().name.clone()),
-                                            CompLocation::from(location)
-                                        ).print_and_exit();
-                                    }
-                                }
-                                _ => CompError::new(
-                                    1,
-                                    format!("Complex accessors are not yet supported!"),
-                                    CompLocation::from(location)
-                                ).print_and_exit(),
+                            _ => CompError::new(
+                                1,
+                                format!("Complex accessors are not yet supported!"),
+                                CompLocation::from(location),
+                            )
+                            .print_and_exit(),
+                        },
+                        ExprValue::Value(VariableValue::Instance(t, vars)) => match right {
+                            ExprValue::Member(name) => {
+                                stack.push(ExprValue::Value(resolve_access(vars, name)))
                             }
-                        }
+                            ExprValue::MethodCall(name, args) => {
+                                if let Some(fun) = t.borrow().get_method(name.clone()) {
+                                    stack.push(ExprValue::Value(fun.call_member(
+                                        match interprete(args, contexes.clone()) {
+                                            VariableValue::Tuple(list) => list,
+                                            x => vec![x],
+                                        },
+                                        location.clone(),
+                                        contexes,
+                                        vec![],
+                                        Some(VariableValue::Instance(t.clone(), vars.clone())),
+                                    )));
+                                } else {
+                                    CompError::new(
+                                        152,
+                                        format!(
+                                            "Cannot find method {} in object of type {}.",
+                                            name,
+                                            t.borrow().name.clone()
+                                        ),
+                                        CompLocation::from(location),
+                                    )
+                                    .print_and_exit();
+                                }
+                            }
+                            _ => CompError::new(
+                                1,
+                                format!("Complex accessors are not yet supported!"),
+                                CompLocation::from(location),
+                            )
+                            .print_and_exit(),
+                        },
                         _ => CompError::new(
                             1,
                             format!("Accessing members of this data type is not yet supported!"),
-                            CompLocation::from(location)
-                        ).print_and_exit(),
+                            CompLocation::from(location),
+                        )
+                        .print_and_exit(),
                     }
                 }
                 Operator::Not => {

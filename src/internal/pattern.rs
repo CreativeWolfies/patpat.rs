@@ -28,6 +28,7 @@ where
         args: Vec<VariableValue<'a>>,
         location: Location<'a>,
         contexes: &Vec<ContextRef<'a>>,
+        _closure: Vec<(String, VariableValue<'a>)>,
         _parent: Option<VariableValue<'a>>,
     ) -> VariableValue<'a> {
         (self.fun)(args, location, contexes)

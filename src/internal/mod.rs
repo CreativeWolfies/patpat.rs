@@ -46,9 +46,9 @@ pub fn std_rast<'a>() -> RAST<'a> {
         let mut iter = args.into_iter();
         if is_truthy(iter.next().unwrap()) {
             match iter.next().unwrap() {
-                VariableValue::Function(fun) => {
+                VariableValue::Function(fun, closure) => {
                     // TODO: give Callable a n_args() method
-                    fun.call(vec![], loc, contexes)
+                    fun.call(vec![], loc, contexes, closure)
                 }
                 x => x,
             }
@@ -64,7 +64,7 @@ pub fn std_rast<'a>() -> RAST<'a> {
         }
         match last_value {
             VariableValue::Bail => match args.into_iter().next().unwrap() {
-                VariableValue::Function(fun) => fun.call(vec![], loc, contexes),
+                VariableValue::Function(fun, closure) => fun.call(vec![], loc, contexes, closure),
                 x => x,
             },
             x => x,
@@ -82,7 +82,7 @@ pub fn std_rast<'a>() -> RAST<'a> {
             VariableValue::Bail => {
                 if is_truthy(iter.next().unwrap()) { // 1st argument: condition
                     match iter.next().unwrap() { // 2nd argument
-                        VariableValue::Function(fun) => fun.call(vec![], loc, contexes),
+                        VariableValue::Function(fun, closure) => fun.call(vec![], loc, contexes, closure),
                         x => x,
                     }
                 } else {
@@ -104,11 +104,11 @@ pub fn std_rast<'a>() -> RAST<'a> {
         let from_raw = iter.next().unwrap();
         let to_raw = iter.next().unwrap();
         let callback_raw = iter.next().unwrap();
-        if let VariableValue::Function(callback) = callback_raw {
+        if let VariableValue::Function(callback, closure) = callback_raw {
             if let (VariableValue::Number(from), VariableValue::Number(to)) = (from_raw, to_raw) {
                 let mut last_value = VariableValue::Nil;
                 for x in (from as usize)..((to + 1f64) as usize) {
-                    match callback.call(vec![VariableValue::Number(x as f64)], loc.clone(), contexes) {
+                    match callback.call(vec![VariableValue::Number(x as f64)], loc.clone(), contexes, closure.clone()) {
                         VariableValue::Bail => {
                             return VariableValue::Bail;
                         },
@@ -127,9 +127,9 @@ pub fn std_rast<'a>() -> RAST<'a> {
             return VariableValue::Nil;
         }
         let callback_raw = args.into_iter().next().unwrap();
-        if let VariableValue::Function(callback) = callback_raw {
+        if let VariableValue::Function(callback, closure) = callback_raw {
             loop {
-                match callback.call(vec![], loc.clone(), contexes) {
+                match callback.call(vec![], loc.clone(), contexes, closure.clone()) {
                     VariableValue::Bail => {
                         return VariableValue::Bail;
                     },

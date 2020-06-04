@@ -2,6 +2,11 @@ use super::{ASTKind, ASTNode, Token, TokenTree, AST};
 use crate::Location;
 use std::rc::Rc;
 
+/** Assembles tuples together
+    @param tree - The TokenTree containing the Tuple node
+    @param offset - The offset to the Tuple node; will be incremented on success
+    @returns The node and its location on success, None otherwise
+**/
 pub fn construct_tuple<'a>(
     tree: Rc<TokenTree<'a>>,
     offset: &mut usize,

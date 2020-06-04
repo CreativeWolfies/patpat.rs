@@ -1,29 +1,28 @@
 A: struct {
-  let name
+  let x
 
   'create: (#new()) => {
-    self.name: "A"
+    self.x: 1
   }
 }
 
 B: struct {
-  let name
+  let x
 
   'create: (#new()) => {
-    self.name: "B"
+    self.x: 2
   }
 
-  'hello: (#self()) => {
-    #println("Hello, I am an instance of " + (self.name) + "!")
+  'get_double: (#self()) => {
+    (self.x) * 2
   }
 }
 
 A -> B: {
-  to.name: from.name
+  to.x: from.x
 }
 
 let a: A.'create()
 let b: B.'create()
 
-(a -> B).'hello()
-b.'hello()
+((a -> B).'get_double(), b.'get_double())

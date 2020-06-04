@@ -12,9 +12,7 @@ use token::{Token, TokenTree};
 
     For example,
 
-    ```
     let x: 3
-    ```
 
     Outputs:
 

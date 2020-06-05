@@ -1,0 +1,22 @@
+// swap: f |-> ((a, b) |-> fn(b, a))
+'swap: (fn) => {
+  // The #with(variable) lets you capture a variable from the current context into that function reference
+
+  (a, b, #with(fn)) => {
+    fn.(b, a)
+  }
+}
+
+'swap(#println).("Hello", "World")
+
+
+let dog: "woof"
+let cat: "meow"
+
+// The #do(fn) function simply execute whichever function it gets as first argument
+// #with can also take two arguments as input; it will put the value of the second inside the first one
+// Try executing it to see what it outputs!
+#do((#with(dog, cat), #with(cat, dog)) => {
+  #println("The dog says '" + dog + "'!")
+  #println("The cat says '" + cat + "'!")
+})

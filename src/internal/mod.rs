@@ -140,6 +140,18 @@ pub fn std_rast<'a>() -> RAST<'a> {
         VariableValue::Nil
     });
 
+    add_pattern(&mut res, "#do", |args, loc, contexes| {
+        if args.len() < 1 {
+            // TODO: error out
+            return VariableValue::Nil;
+        }
+        let callback_raw = args.into_iter().next().unwrap();
+        if let VariableValue::Function(callback, closure) = callback_raw {
+            callback.call(vec![], loc.clone(), contexes, closure.clone());
+        }
+        VariableValue::Nil
+    });
+
     res
 }
 

@@ -176,6 +176,32 @@ pub fn std_rast<'a>() -> RAST<'a> {
         }
     });
 
+    add_pattern(&mut res, "#push", |args, _loc, _contexes| {
+        if args.len() != 2 {
+            return VariableValue::Nil;
+        }
+
+        let mut iter = args.into_iter();
+        if let VariableValue::Tuple(mut vec) = iter.next().unwrap() {
+            vec.push(iter.next().unwrap());
+            VariableValue::Tuple(vec)
+        } else {
+            VariableValue::Nil
+        }
+    });
+
+    add_pattern(&mut res, "#pop", |args, _loc, _contexes| {
+        if args.len() != 1 {
+            return VariableValue::Nil;
+        }
+
+        if let VariableValue::Tuple(mut vec) = args.into_iter().next().unwrap() {
+            VariableValue::Tuple(vec![vec.pop().unwrap_or(VariableValue::Nil), VariableValue::Tuple(vec)])
+        } else {
+            VariableValue::Nil
+        }
+    });
+
     res
 }
 

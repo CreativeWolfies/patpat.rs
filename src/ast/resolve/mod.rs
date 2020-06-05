@@ -17,6 +17,7 @@ use std::cell::RefCell;
 use std::rc::Weak;
 pub use variable::*;
 use crate::internal;
+use rusty_ulid::Ulid;
 
 /** Resolved abstract syntax tree (RAST): an AST referencing itself through its variables, functions, etc.
 This resolved AST has all of its variables, patterns, etc. resolved (ie. they all point to their value's respective memory location).
@@ -40,6 +41,7 @@ pub struct RAST<'a> {
     pub structs: Vec<RStructRef<'a>>,
     pub depth: usize,
     pub kind: ASTKind,
+    pub ulid: u128,
     declared_patterns: Vec<Rc<RPattern<'a>>>, // helper Vec, used by RAST::resolve and RAST::resolve_node
 }
 
@@ -49,7 +51,7 @@ pub struct RAST<'a> {
 pub fn resolve<'a>(ast: AST<'a>) -> RASTRef {
     RAST::resolve(
         ast,
-        Rc::downgrade(&Rc::new(RefCell::new(internal::std_rast()))),
+        Rc::downgrade(&Rc::new(RefCell::new(internal::std_rast())))
     )
 }
 
@@ -67,6 +69,7 @@ impl<'a> RAST<'a> {
             depth: parent.upgrade().map(|p| p.borrow().depth + 1).unwrap_or(0),
             kind,
             declared_patterns: Vec::new(),
+            ulid: Ulid::generate().into(),
         }
     }
 
@@ -137,7 +140,7 @@ impl<'a> RAST<'a> {
                     name,
                     loc.clone(),
                     &res.borrow().variables,
-                    parent.clone(),
+                    res.clone(),
                 );
                 Some(RASTNode::VariableDef(
                     s,
@@ -204,7 +207,7 @@ impl<'a> RAST<'a> {
                     name,
                     loc.clone(),
                     &res.borrow().variables,
-                    parent.clone(),
+                    res.clone(),
                 );
                 Some(RASTNode::Variable(var))
             }

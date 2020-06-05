@@ -38,3 +38,4 @@
 203: Mismatching number of arguments
 204: Casting to non-type
 205: Invalid tuple member accessor
+206: Function fell out of scope

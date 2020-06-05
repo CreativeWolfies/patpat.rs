@@ -10,6 +10,7 @@ pub struct Context<'a> {
     pub depth: usize,
     pub variables: HashMap<String, VariableValue<'a>>,
     pub last_value: VariableValue<'a>,
+    pub ulid: u128,
 }
 
 impl<'a> From<RASTRef<'a>> for Context<'a> {
@@ -24,6 +25,7 @@ impl<'a> From<RASTRef<'a>> for Context<'a> {
             depth: ast.borrow().depth,
             variables,
             last_value: VariableValue::Nil,
+            ulid: ast.borrow().ulid,
         }
     }
 }

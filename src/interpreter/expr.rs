@@ -102,6 +102,7 @@ pub fn interprete_expression_int<'a>(
                         ExprValue::Value(VariableValue::Function(fun, closure)) => {
                             let args = match right {
                                 ExprValue::Value(VariableValue::Tuple(vec)) => vec,
+                                ExprValue::Value(VariableValue::Nil) => vec![],
                                 ExprValue::Value(x) => vec![x],
                                 _ => CompError::new(
                                     1,

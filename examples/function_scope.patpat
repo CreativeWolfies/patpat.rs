@@ -1,0 +1,17 @@
+let f
+let g
+
+// Functions referencing a variable will only be accessible within the scope of that variable
+{
+  let a: 3
+  f: () => {a: a + 1}
+  g: (#with(a)) => {a * 2}
+
+  g.()
+  f.() // valid
+
+  #println(a)
+}
+
+g.() // valid
+f.() // not valid

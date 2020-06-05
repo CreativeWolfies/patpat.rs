@@ -10,6 +10,7 @@ pub struct RFunction<'a> {
     pub has_lhs: bool,
     pub has_new: bool,
     pub closure: Vec<(String, RASTRef<'a>)>,
+    pub required_ctx: Option<(usize, u128, Location<'a>)>,
 }
 
 impl<'a> From<(Function<'a>, RASTWeak<'a>, Location<'a>)> for RFunction<'a> {
@@ -52,6 +53,13 @@ impl<'a> From<(Function<'a>, RASTWeak<'a>, Location<'a>)> for RFunction<'a> {
 
         let body = RAST::resolve(function.body, Rc::downgrade(&init));
 
+        let mut required_ctx = scan_body_reqs(body.clone());
+        if let Some((depth, _, _)) = required_ctx {
+            if depth >= init.borrow().depth {
+                required_ctx = None;
+            }
+        }
+
         init.borrow_mut()
             .instructions
             .push((RASTNode::Block(body), loc.clone()));
@@ -67,6 +75,7 @@ impl<'a> From<(Function<'a>, RASTWeak<'a>, Location<'a>)> for RFunction<'a> {
             has_self: function.has_self,
             has_new: function.has_new,
             closure,
+            required_ctx,
         }
     }
 }
@@ -125,4 +134,25 @@ impl<'a> From<(FunctionArg, RASTWeak<'a>, Location<'a>)> for RFunctionArg<'a> {
             }
         }
     }
+}
+
+fn scan_body_reqs<'a>(body: RASTRef<'a>) -> Option<(usize, u128, Location<'a>)> {
+    let mut res: Option<(usize, u128, Location)> = None;
+    for instruction in &body.borrow().instructions {
+        match instruction {
+            (RASTNode::Variable(sym), loc)
+            | (RASTNode::VariableDef(sym, _), loc) => {
+                match &res {
+                    None => res = Some((sym.depth, sym.ulid, loc.clone())),
+                    Some((depth, _ulid, _loc)) => {
+                        if *depth < sym.depth {
+                            res = Some((sym.depth, sym.ulid, loc.clone()));
+                        }
+                    }
+                }
+            },
+            _ => {}
+        }
+    }
+    res
 }

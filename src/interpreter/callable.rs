@@ -72,6 +72,25 @@ impl<'a> Callable<'a> for RFunction<'a> {
         parent: Option<VariableValue<'a>>,
     ) -> VariableValue<'a> {
         //! Asserts that contexes is not empty
+        if let Some((depth, ulid, ref_loc)) = self.required_ctx.clone() {
+            let mut ctx_found = false;
+            for ctx in contexes.iter() {
+                if ctx.borrow().depth == depth && ctx.borrow().ulid == ulid {
+                    ctx_found = true;
+                }
+            }
+            if !ctx_found {
+                CompError::new(
+                    206,
+                    format!("Function fell out of scope"),
+                    location.into()
+                ).append(
+                    format!("This is due to the following reference being made within it:"),
+                    ref_loc.into()
+                ).print_and_exit();
+            }
+        }
+
         let mut init_ctx = Context::from(self.body.clone());
 
         if args.len() != self.args.len() {

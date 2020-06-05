@@ -189,6 +189,36 @@ pub fn interprete_expression_int<'a>(
                             )
                             .print_and_exit(),
                         },
+                        ExprValue::Value(VariableValue::Tuple(vec)) => match right {
+                            ExprValue::Value(VariableValue::Number(x)) => {
+                                let index = x as usize;
+                                if index >= vec.len() {
+                                    stack.push(ExprValue::Value(VariableValue::Nil));
+                                } else {
+                                    stack.push(ExprValue::Value(vec[index].clone()));
+                                }
+                            }
+                            ExprValue::Value(VariableValue::Tuple(vec2)) => {
+                                stack.push(ExprValue::Value(VariableValue::Tuple(vec2.into_iter().map(|raw| {
+                                    if let VariableValue::Number(x) = raw {
+                                        let index = x as usize;
+                                        if index >= vec.len() {
+                                            VariableValue::Nil
+                                        } else {
+                                            vec[index].clone()
+                                        }
+                                    } else {
+                                        VariableValue::Nil
+                                    }
+                                }).collect())));
+                            }
+                            _ => CompError::new(
+                                205,
+                                String::from("Invalid tuple member accessor!"),
+                                CompLocation::from(location),
+                            )
+                            .print_and_exit(),
+                        },
                         _ => CompError::new(
                             1,
                             format!("Accessing members of this data type is not yet supported!"),

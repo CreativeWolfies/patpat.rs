@@ -37,3 +37,4 @@
 202: Invalid operator in expression
 203: Mismatching number of arguments
 204: Casting to non-type
+205: Invalid tuple member accessor

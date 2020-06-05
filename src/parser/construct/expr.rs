@@ -43,7 +43,16 @@ pub fn construct_expression<'a>(
 
     let first_term_ops: Vec<Operator> = handle_unary_operators(tree.clone(), offset);
     let mut offset2 = *offset;
-    let first_term = construct_non_expression(tree.clone(), &mut offset2);
+    let mut first_term = construct_non_expression(tree.clone(), &mut offset2);
+
+    // Flatten the first term if need be
+    if let Some((ASTNode::Tuple(mut tuple), loc)) = first_term {
+        if tuple.instructions.len() == 1 {
+            first_term = Some((tuple.instructions.pop().unwrap().0, loc));
+        } else {
+            first_term = Some((ASTNode::Tuple(tuple), loc));
+        }
+    }
 
     if tree.tokens.len() > offset2 {
         // check if we're not at the end of the token list
@@ -164,6 +173,15 @@ pub fn construct_expression<'a>(
                                 }
                             } else {
                                 res = (ASTNode::Variable(name), sym_loc);
+                            }
+                        }
+                    } else {
+                        // Non-specific operator: flatten the n-th term
+                        if let (ASTNode::Tuple(mut vec), loc) = res {
+                            if vec.instructions.len() == 1 {
+                                res = (vec.instructions.pop().unwrap().0, loc);
+                            } else {
+                                res = (ASTNode::Tuple(vec), loc);
                             }
                         }
                     }

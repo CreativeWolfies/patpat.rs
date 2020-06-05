@@ -152,6 +152,30 @@ pub fn std_rast<'a>() -> RAST<'a> {
         VariableValue::Nil
     });
 
+    add_pattern(&mut res, "#last", |args, _loc, _contexes| {
+        if args.len() != 1 {
+            return VariableValue::Nil;
+        }
+
+        if let VariableValue::Tuple(mut vec) = args.into_iter().next().unwrap() {
+            vec.pop().unwrap_or(VariableValue::Nil)
+        } else {
+            VariableValue::Nil
+        }
+    });
+
+    add_pattern(&mut res, "#first", |args, _loc, _contexes| {
+        if args.len() != 1 {
+            return VariableValue::Nil;
+        }
+
+        if let VariableValue::Tuple(vec) = args.into_iter().next().unwrap() {
+            vec.first().unwrap_or(&VariableValue::Nil).clone()
+        } else {
+            VariableValue::Nil
+        }
+    });
+
     res
 }
 

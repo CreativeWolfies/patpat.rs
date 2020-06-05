@@ -199,18 +199,31 @@ pub fn interprete_expression_int<'a>(
                                 }
                             }
                             ExprValue::Value(VariableValue::Tuple(vec2)) => {
-                                stack.push(ExprValue::Value(VariableValue::Tuple(vec2.into_iter().map(|raw| {
-                                    if let VariableValue::Number(x) = raw {
+                                if vec2.len() == 1 {
+                                    if let VariableValue::Number(x) = vec2[0] {
                                         let index = x as usize;
                                         if index >= vec.len() {
-                                            VariableValue::Nil
+                                            stack.push(ExprValue::Value(VariableValue::Nil));
                                         } else {
-                                            vec[index].clone()
+                                            stack.push(ExprValue::Value(vec[index].clone()));
                                         }
                                     } else {
-                                        VariableValue::Nil
+                                        stack.push(ExprValue::Value(VariableValue::Nil));
                                     }
-                                }).collect())));
+                                } else {
+                                    stack.push(ExprValue::Value(VariableValue::Tuple(vec2.into_iter().map(|raw| {
+                                        if let VariableValue::Number(x) = raw {
+                                            let index = x as usize;
+                                            if index >= vec.len() {
+                                                VariableValue::Nil
+                                            } else {
+                                                vec[index].clone()
+                                            }
+                                        } else {
+                                            VariableValue::Nil
+                                        }
+                                    }).collect())));
+                                }
                             }
                             _ => CompError::new(
                                 205,

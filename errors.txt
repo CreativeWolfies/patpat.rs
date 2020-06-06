@@ -19,6 +19,7 @@
 19: Invalid term in variable definition
 20: Invalid term in struct definition
 21: Invalid instruction
+22: Invalid standalone pattern: the next term may be wrangled
 
 101: Unexpected ')'
 102: Unexpected '}'
@@ -28,6 +29,7 @@
 106: Duplicate #lhs()
 107: No operator precedence
 108: Cannot define this kind of expression
+109: Expected tuple after partial application
 
 151: Unknown symbol
 152: Unknown pattern/method

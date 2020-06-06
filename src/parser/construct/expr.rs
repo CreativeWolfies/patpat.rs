@@ -46,11 +46,11 @@ pub fn construct_expression<'a>(
     let mut first_term = construct_non_expression(tree.clone(), &mut offset2);
 
     // Flatten the first term if need be
-    if let Some((ASTNode::Tuple(mut tuple), loc)) = first_term {
+    if let Some((ASTNode::Tuple(mut tuple, is_partial), loc)) = first_term {
         if tuple.instructions.len() == 1 {
             first_term = Some((tuple.instructions.pop().unwrap().0, loc));
         } else {
-            first_term = Some((ASTNode::Tuple(tuple), loc));
+            first_term = Some((ASTNode::Tuple(tuple, is_partial), loc));
         }
     }
 
@@ -175,13 +175,22 @@ pub fn construct_expression<'a>(
                                 res = (ASTNode::Variable(name), sym_loc);
                             }
                         }
+                    } else if let Operator::PartialApplication = op {
+                        match res {
+                            (ASTNode::Tuple(ast, _), args_loc) => res = (ASTNode::Tuple(ast, true), args_loc),
+                            (_, args_loc) => CompError::new(
+                                    109,
+                                    String::from("Expected tuple after the partial application operator"),
+                                    args_loc.into()
+                                ).print_and_exit(),
+                        }
                     } else {
                         // Non-specific operator: flatten the n-th term
-                        if let (ASTNode::Tuple(mut vec), loc) = res {
+                        if let (ASTNode::Tuple(mut vec, is_partial), loc) = res {
                             if vec.instructions.len() == 1 {
                                 res = (vec.instructions.pop().unwrap().0, loc);
                             } else {
-                                res = (ASTNode::Tuple(vec), loc);
+                                res = (ASTNode::Tuple(vec, is_partial), loc);
                             }
                         }
                     }

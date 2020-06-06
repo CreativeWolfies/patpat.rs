@@ -62,7 +62,6 @@ impl<'a> Callable<'a> for RFunction<'a> {
         "<anonymous function>".to_string()
     }
 
-    #[allow(unused_variables)]
     fn call_member(
         &self,
         args: Vec<VariableValue<'a>>,

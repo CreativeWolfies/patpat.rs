@@ -14,12 +14,13 @@ pub enum RASTNode<'a> {
     Variable(RSymRef),
     Expression(RExpression<'a>),
     Block(RASTRef<'a>),
-    Tuple(Vec<(RASTNode<'a>, Location<'a>)>),
+    Tuple(Vec<(RASTNode<'a>, Location<'a>)>, bool),
     Boolean(bool),
     Number(f64),
     String(String),
     TypeName(RStructRef<'a>),
     Nil,
+    VoidSymbol,
 }
 
 impl<'a> fmt::Debug for RASTNode<'a> {
@@ -52,12 +53,13 @@ impl<'a> fmt::Debug for RASTNode<'a> {
             RASTNode::Member(name) => f.debug_tuple("Member").field(&name).finish(),
             RASTNode::Expression(expr) => f.debug_tuple("Expression").field(&expr).finish(),
             RASTNode::Block(rast) => f.debug_tuple("Block").field(&rast).finish(),
-            RASTNode::Tuple(vec) => f.debug_tuple("Tuple").field(&vec).finish(),
+            RASTNode::Tuple(vec, is_partial) => f.debug_tuple(if *is_partial {"PartialTuple"} else {"Tuple"}).field(&vec).finish(),
             RASTNode::TypeName(rstruct) => write!(f, "{:?}", rstruct.borrow().name),
             RASTNode::Boolean(b) => write!(f, "Boolean({})", b),
             RASTNode::Number(x) => write!(f, "Number({})", x),
             RASTNode::String(string) => write!(f, "String({})", string),
             RASTNode::Nil => write!(f, "Nil"),
+            RASTNode::VoidSymbol => write!(f, "VoidSymbol"),
         }
     }
 }

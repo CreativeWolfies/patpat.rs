@@ -8,6 +8,7 @@ use std::fmt;
 pub enum Token<'a> {
     Boolean(bool),
     Symbol(String),
+    VoidSymbol,
     Define,
     Let,
     Struct,
@@ -49,6 +50,7 @@ impl<'a> Token<'a> {
                 }
             }),
             Kind::Arrow => Token::Arrow,
+            Kind::VoidSymbol => Token::VoidSymbol,
             Kind::TypeName => Token::TypeName(TypeName {
                 name: String::from(caps.get(0).unwrap().as_str()),
             }),
@@ -77,6 +79,7 @@ impl<'a> Token<'a> {
                 "/" => Operator::Div,
                 "%" => Operator::Mod,
                 "." => Operator::MemberAccessor,
+                "~" => Operator::PartialApplication,
                 _ => {
                     eprintln!("Unknown operator: {:?}", caps.get(1).unwrap().as_str());
                     std::process::exit(1);
@@ -116,6 +119,7 @@ impl<'a> TokenTree<'a> {
 pub enum Kind {
     Boolean,
     Symbol,
+    VoidSymbol,
     Define,
     Space,
     Let,
@@ -174,6 +178,7 @@ impl fmt::Display for TypeName {
 pub enum Operator {
     Interpretation,
     MemberAccessor,
+    PartialApplication,
     Gt,
     Gte,
     Lt,

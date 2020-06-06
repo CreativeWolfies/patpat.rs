@@ -19,6 +19,7 @@ pub fn construct_ident<'a>(
         (Token::Number(n), loc) => Some((ASTNode::Number(*n), loc.clone())),
         (Token::String(s), loc) => Some((ASTNode::String(s.clone()), loc.clone())),
         (Token::TypeName(n), loc) => Some((ASTNode::TypeName(n.clone()), loc.clone())),
+        (Token::VoidSymbol, loc) => Some((ASTNode::VoidSymbol, loc.clone())),
         _ => None,
     };
     if let None = res {

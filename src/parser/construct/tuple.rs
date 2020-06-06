@@ -18,7 +18,7 @@ pub fn construct_tuple<'a>(
         if ast.instructions.len() == 0 {
             Some((ASTNode::Nil, loc.clone()))
         } else {
-            Some((ASTNode::Tuple(ast), loc.clone()))
+            Some((ASTNode::Tuple(ast, false), loc.clone()))
         }
     } else {
         None

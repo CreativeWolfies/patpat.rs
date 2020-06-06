@@ -13,6 +13,13 @@ pub enum ExprValue<'a> {
     Value(VariableValue<'a>),
     Member(String),
     MethodCall(String, RASTRef<'a>),
+    PartialTuple(Vec<PartialValue<'a>>),
+}
+
+#[derive(Debug)]
+pub enum PartialValue<'a> {
+    VariableValue(VariableValue<'a>),
+    Void,
 }
 
 /** Executes the expression and returns the remaining ExprValue stack
@@ -53,6 +60,14 @@ pub fn interprete_expression_int<'a>(
     for term in &expr.terms {
         match term {
             RExprTerm::Push(node) => stack.push(match node {
+                RASTNode::Tuple(vec, true) => {
+                    ExprValue::PartialTuple(vec.iter().map(|instruction| {
+                        match instruction {
+                            (RASTNode::VoidSymbol, _loc) => PartialValue::Void,
+                            (x, loc) => PartialValue::VariableValue(interprete_instruction(x, loc.clone(), contexes)),
+                        }
+                    }).collect())
+                }
                 RASTNode::MethodCall(name, body) => {
                     ExprValue::MethodCall(name.clone(), body.clone())
                 }
@@ -241,6 +256,23 @@ pub fn interprete_expression_int<'a>(
                         .print_and_exit(),
                     }
                 }
+                Operator::PartialApplication => {
+                    let right = stack.pop().unwrap();
+                    let left = stack.pop().unwrap();
+                    if let ExprValue::PartialTuple(vec) = right {
+                        if let ExprValue::Value(VariableValue::Function(f, closure)) = left {
+                            stack.push(ExprValue::Value(VariableValue::Function(
+                                Rc::new(PartialApplication {
+                                    parent: f,
+                                    args: vec,
+                                }),
+                                closure
+                            )));
+                        }
+                    } else {
+                        panic!("Right-hand side of partial application resolved to non-PartialTuple");
+                    }
+                }
                 Operator::Not => {
                     let res = execute_unary_op(stack.pop().unwrap(), &op, location.clone());
                     stack.push(res);
@@ -311,4 +343,38 @@ fn resolve_access<'a>(obj: InstanceRef<'a>, name: String) -> VariableValue<'a> {
         .get(&name)
         .map(|x| x.clone())
         .unwrap_or(VariableValue::Nil)
+}
+
+pub struct PartialApplication<'a> {
+    pub parent: Rc<dyn Callable<'a> + 'a>,
+    pub args: Vec<PartialValue<'a>>,
+}
+
+impl<'a> Callable<'a> for PartialApplication<'a> {
+    fn get_name(&self) -> String {
+        format!("Partial<{}>", self.parent.get_name())
+    }
+
+    fn call_member(
+        &self,
+        args: Vec<VariableValue<'a>>,
+        location: Location<'a>,
+        contexes: &Vec<ContextRef<'a>>,
+        closure: Vec<(String, VariableValue<'a>)>,
+        parent: Option<VariableValue<'a>>,
+    ) -> VariableValue<'a> {
+        let mut args_iter = args.into_iter();
+        let args = self.args.iter().map(|arg| match arg {
+            PartialValue::VariableValue(x) => x.clone(),
+            PartialValue::Void => args_iter.next().unwrap_or_else(|| {
+                CompError::new(
+                    203,
+                    String::from("Invalid number of arguments in partial application"),
+                    location.clone().into()
+                ).print_and_exit()
+            })
+        }).collect();
+
+        self.parent.call_member(args, location, contexes, closure, parent)
+    }
 }

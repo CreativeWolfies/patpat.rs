@@ -50,7 +50,7 @@ pub fn interprete_instruction<'a, 'b>(
         RASTNode::Number(x) => VariableValue::Number(*x),
         RASTNode::String(x) => VariableValue::String(x.clone()),
         RASTNode::Boolean(x) => VariableValue::Boolean(*x),
-        RASTNode::Tuple(instructions) => VariableValue::Tuple(
+        RASTNode::Tuple(instructions, _is_partial) => VariableValue::Tuple(
             instructions
                 .iter()
                 .map(|ins| interprete_instruction(&ins.0, ins.1.clone(), contexes))
@@ -86,6 +86,7 @@ pub fn interprete_instruction<'a, 'b>(
         RASTNode::Block(ast) => interprete(ast.clone(), contexes.clone()),
         RASTNode::Variable(var) => with_variable(var, contexes, |var| var.clone(), location),
         RASTNode::Nil => VariableValue::Nil,
+        RASTNode::VoidSymbol => VariableValue::Nil,
         RASTNode::Pattern(pat) => VariableValue::Function(pat.clone(), vec![]),
         RASTNode::Function(fun) => VariableValue::Function(
             fun.clone(),

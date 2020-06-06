@@ -94,3 +94,11 @@ fn scope() {
     let src = test::load("test/patterns/scope.patpat");
     test::execute(test::compile(&src));
 }
+
+#[test]
+#[should_panic(expected = "Invalid standalone pattern: the next term may be wrangled with it")]
+fn wrangle_risk() {
+    test::init_testenv();
+    let src = test::load("test/patterns/wrangle_risk.patpat");
+    test::execute(test::compile(&src));
+}

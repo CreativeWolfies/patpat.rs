@@ -12,6 +12,7 @@ pub enum ASTNode<'a> {
     Variable(String),
     TypedVariable(String, Type),
     TypeName(token::TypeName),
+    VoidSymbol,
     VariableDecl(String),
     VariableInit(String, Box<ASTNode<'a>>),
     VariableDef(String, Box<ASTNode<'a>>),
@@ -20,7 +21,7 @@ pub enum ASTNode<'a> {
     Number(f64),
     String(String),
     Expression(Expression<'a>),
-    Tuple(AST<'a>),
+    Tuple(AST<'a>, bool), // body, is_partial
     Block(AST<'a>),
     Interpretation(token::TypeName, token::TypeName, AST<'a>), // from, to, body
     Struct(token::TypeName, AST<'a>),                          // name, body
@@ -39,12 +40,13 @@ impl<'a> ASTNode<'a> {
             | ASTNode::Boolean(_)
             | ASTNode::Number(_)
             | ASTNode::String(_)
-            | ASTNode::Tuple(_)
+            | ASTNode::Tuple(_, _)
             | ASTNode::Block(_)
             | ASTNode::TypeName(_)
             | ASTNode::Nil
             | ASTNode::VariableDef(_, _)
             | ASTNode::ComplexDef(_, _, _)
+            | ASTNode::VoidSymbol
             | ASTNode::Expression(_) => true,
             _ => false,
         }
@@ -59,6 +61,7 @@ impl<'a> ASTNode<'a> {
             ASTNode::Variable(_)
             | ASTNode::TypedVariable(_, _)
             | ASTNode::PatternCall(_, _)
+            | ASTNode::VoidSymbol
             | ASTNode::Expression(_) => true,
             _ => false,
         }

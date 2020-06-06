@@ -252,7 +252,7 @@ impl<'a> RAST<'a> {
                     panic!("RAST::resolve_node did not return an expression");
                 }
             }
-            ASTNode::Tuple(ast) => {
+            ASTNode::Tuple(ast, is_partial) => {
                 let mut elements: Vec<(RASTNode<'a>, Location<'a>)> =
                     Vec::with_capacity(ast.instructions.len());
                 for instruction in ast.instructions.into_iter() {
@@ -262,7 +262,7 @@ impl<'a> RAST<'a> {
                         loc,
                     ));
                 }
-                Some(RASTNode::Tuple(elements))
+                Some(RASTNode::Tuple(elements, is_partial))
             }
             ASTNode::Block(ast) => {
                 let block = RAST::resolve(ast, Rc::downgrade(&res));
@@ -273,6 +273,7 @@ impl<'a> RAST<'a> {
                     lookup::lookup_struct(name, loc.clone(), &res.borrow().structs, parent.clone());
                 Some(RASTNode::TypeName(st))
             }
+            ASTNode::VoidSymbol => Some(RASTNode::VoidSymbol),
             ASTNode::Nil => Some(RASTNode::Nil),
             _ => None,
         }

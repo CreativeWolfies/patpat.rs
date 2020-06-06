@@ -1,0 +1,11 @@
+// Simple addition function
+'sub: (a, b) => {a - b}
+
+// This is a partial application: the second argument is left empty and will be filled by a subsequent call to plus_one
+// We will have: one_minus_x : x |-> sub(1, x) = 1 - x
+// x_minus_one : x |-> sub(x, 1) = x - 1
+let one_minus_x: 'sub~(1, _)
+let x_minus_one: 'sub~(_, 1)
+
+#println(one_minus_x.(2))
+#println(x_minus_one.(2))

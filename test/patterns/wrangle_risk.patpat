@@ -1,0 +1,7 @@
+// This script errors out due to an unexpected wrangling risk
+let fn: #println
+
+// Uncommenting the second line will unexpectedly make the above #println use that tuple:
+// (2, 3).0
+
+#println(3)

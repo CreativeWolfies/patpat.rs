@@ -1,5 +1,6 @@
 use super::{ast, ASTKind, ASTNode, Token, TokenTree, AST};
 use crate::Location;
+use crate::error::CompError;
 use std::rc::Rc;
 
 pub fn construct_pattern_declaration<'a>(
@@ -94,6 +95,20 @@ pub fn construct_standalone_pattern<'a>(
     offset: &mut usize,
 ) -> Option<(ASTNode<'a>, Location<'a>)> {
     if let (Token::Pattern(p), loc) = &tree.tokens[*offset] {
+        if tree.tokens.len() > *offset + 1 {
+            if let (Token::Separator, _) = &tree.tokens[*offset + 1] {}
+            if let (Token::Operator(_), _) = &tree.tokens[*offset + 1] {}
+            else {
+                CompError::new(
+                    22,
+                    String::from("Invalid standalone pattern: the next term may be wrangled with it"),
+                    loc.into()
+                ).append(
+                    String::from("Consider using partial application, encapsulating the pattern in a tuple or putting a separator (,) before this term"),
+                    (&tree.tokens[*offset + 1].1).into()
+                ).print_and_exit();
+            }
+        }
         *offset += 1;
         Some((ASTNode::Pattern(p.clone()), loc.clone()))
     } else {

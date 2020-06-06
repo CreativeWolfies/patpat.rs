@@ -86,3 +86,11 @@ fn closure() {
         test::execute(test::compile(&src))
     );
 }
+
+#[test]
+#[should_panic(expected = "Function fell out of scope")]
+fn scope() {
+    test::init_testenv();
+    let src = test::load("test/patterns/scope.patpat");
+    test::execute(test::compile(&src));
+}

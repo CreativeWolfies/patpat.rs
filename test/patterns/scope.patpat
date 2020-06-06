@@ -1,0 +1,9 @@
+// This script should error out shall `f` be called outside of `a`'s scope (which it is here)
+
+let f
+{
+  let a
+  f: () => {a: a + 1}
+}
+
+f.()

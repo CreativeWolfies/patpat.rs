@@ -1,10 +1,12 @@
 [package]
 name = "patpat"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Adrien Burgun <adrien.burgun@orange.fr>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "An interpreted, procedural, imperative and experimental language"
+repository = "https://github.com/CreativeWolfies/patpat.rs/"
+license = "MIT"
+keywords = ["patpat", "language", "interpreted"]
 
 [dependencies]
 regex = "1"

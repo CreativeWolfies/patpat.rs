@@ -1,0 +1,5 @@
+// Tests the #bail and #unbail mechanics
+
+let x: #bail(3)
+x
+#else(#unbail(x))

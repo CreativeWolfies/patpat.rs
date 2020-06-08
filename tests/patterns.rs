@@ -88,6 +88,16 @@ fn closure() {
 }
 
 #[test]
+fn bail() {
+    test::init_testenv();
+    let src = test::load("test/patterns/bail.patpat");
+    assert_eq!(
+        VariableValue::Tuple(vec![VariableValue::Number(3.0f64)]),
+        test::execute(test::compile(&src))
+    );
+}
+
+#[test]
 #[should_panic(expected = "Function fell out of scope")]
 fn scope() {
     test::init_testenv();

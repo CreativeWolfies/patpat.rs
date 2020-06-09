@@ -85,15 +85,21 @@ pub fn interprete_expression_int<'a>(
                                 .interpretations
                                 .iter()
                                 .find(|x| x.0.upgrade().map(|y| *y == *into).unwrap_or(false))
-                                .unwrap_or_else(|| panic!("Couldn't find interpretation"))
-                                .clone();
+                                .map(|x| x.clone());
 
-                            stack.push(ExprValue::Value(
-                                interpretation::interprete_interpretation(
+                            if let Some(interpretation) = interpretation {
+                                stack.push(ExprValue::Value(
+                                    interpretation::interprete_interpretation(
+                                        VariableValue::Instance(of.clone(), values),
+                                        interpretation.clone(),
+                                    ),
+                                ));
+                            } else if of.borrow().can_turn_into(into.clone()) {
+                                stack.push(ExprValue::Value(interpretation::cast_value(
                                     VariableValue::Instance(of.clone(), values),
-                                    interpretation.clone(),
-                                ),
-                            ));
+                                    into
+                                )));
+                            }
                         } else {
                             CompError::new(
                                 1,

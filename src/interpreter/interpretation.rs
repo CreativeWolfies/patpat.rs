@@ -28,3 +28,16 @@ pub fn interprete_interpretation<'a>(
 
     res
 }
+
+/** Casts `value` into an instance of `into`.
+    This asserts that `value` is a subtype of `into` and does not use any programmer-defined interpretation logic.
+    @param value - The value to cast
+    @param into - THe type to turn `value` into
+**/
+pub fn cast_value<'a>(value: VariableValue<'a>, into: RStructRef<'a>) -> VariableValue<'a> {
+    if let VariableValue::Instance(_of, hashmap) = value {
+        VariableValue::Instance(into, hashmap)
+    } else {
+        panic!("Expected value to be an instance!");
+    }
+}

@@ -50,6 +50,56 @@ impl<'a> RStruct<'a> {
         }
         None
     }
+
+    pub fn is_subtype_of(&self, other: RStructRef<'_>) -> bool {
+        //! Asserts that self.context has been set
+        self.context.as_ref().map(|ctx_self| other.borrow().context.as_ref().map(|ctx_other| {
+            for pattern_self in &ctx_self.borrow().patterns {
+                let mut found = false;
+                for pattern_other in &ctx_other.borrow().patterns {
+                    if pattern_other.get_name() == pattern_self.get_name() {
+                        found = true;
+                        break;
+                    }
+                }
+                if !found {
+                    return false;
+                }
+            }
+            for variable_self in &ctx_self.borrow().variables {
+                let mut found = false;
+                for variable_other in &ctx_other.borrow().variables {
+                    if variable_other.borrow().name == variable_self.borrow().name {
+                        found = true;
+                        break;
+                    }
+                }
+                if !found {
+                    return false;
+                }
+            }
+            true
+        })).unwrap_or(Some(false)).unwrap()
+    }
+
+    pub fn can_turn_into(&self, other: RStructRef<'_>) -> bool {
+        //! Asserts that self.context has been set
+        self.context.as_ref().map(|ctx_self| other.borrow().context.as_ref().map(|ctx_other| {
+            for variable_self in &ctx_self.borrow().variables {
+                let mut found = false;
+                for variable_other in &ctx_other.borrow().variables {
+                    if variable_other.borrow().name == variable_self.borrow().name {
+                        found = true;
+                        break;
+                    }
+                }
+                if !found {
+                    return false;
+                }
+            }
+            true
+        })).unwrap_or(Some(false)).unwrap()
+    }
 }
 
 impl<'a> PartialEq for RStruct<'a> {

@@ -1,0 +1,16 @@
+A: struct {
+  let x
+  'new: (#new()) => {
+    self.x: 0
+  }
+}
+
+B: struct {
+  let x
+  'hello: (#self()) => {
+    "Hello, my number is " + (self.x) + "!"
+  }
+}
+
+let a: A.'new()
+(a -> B).'hello()

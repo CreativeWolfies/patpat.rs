@@ -150,11 +150,14 @@ impl<'a> BinaryOp<'a, Self> for VariableValue<'a> {
                     }
                     _ => err_mixed_types(loc),
                 },
-                VariableValue::Function(x, _) => {
-                    if let VariableValue::String(y) = b {
-                        format!("[function {}]", x.get_name()).binary_op(y, op, loc)
-                    } else {
-                        err_invalid_op(loc)
+                VariableValue::Function(x, x_closure) => {
+                    match b {
+                        VariableValue::String(y) => format!("[function {}]", x.get_name()).binary_op(y, op, loc),
+                        VariableValue::Function(y, y_closure) => VariableValue::Function(
+                            composite_fn::CompositeFunction::new(x, x_closure, y, y_closure, op.clone()),
+                            vec![]
+                        ),
+                        _ => err_invalid_op(loc)
                     }
                 }
                 VariableValue::Type(x) => {

@@ -203,3 +203,27 @@ impl Operator {
         }
     }
 }
+
+impl fmt::Display for Operator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", match self {
+            Operator::Interpretation => "->",
+            Operator::MemberAccessor => ".",
+            Operator::PartialApplication => "~",
+            Operator::Gt => ">",
+            Operator::Gte => ">=",
+            Operator::Lt => "<",
+            Operator::Lte => "<=",
+            Operator::Eq => "==",
+            Operator::Neq => "!=",
+            Operator::Not => "!",
+            Operator::And => "&&",
+            Operator::Or => "||",
+            Operator::Add => "+",
+            Operator::Sub => "-",
+            Operator::Mul => "*",
+            Operator::Div => "/",
+            Operator::Mod => "%",
+        })
+    }
+}

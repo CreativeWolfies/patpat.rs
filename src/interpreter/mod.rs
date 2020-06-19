@@ -7,6 +7,7 @@ pub mod context;
 pub mod expr;
 pub mod interpretation;
 pub mod value;
+pub mod composite_fn;
 
 pub use callable::*;
 pub use context::*;

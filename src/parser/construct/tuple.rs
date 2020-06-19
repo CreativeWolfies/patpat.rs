@@ -17,6 +17,8 @@ pub fn construct_tuple<'a>(
         *offset += 1;
         if ast.instructions.len() == 0 {
             Some((ASTNode::Nil, loc.clone()))
+        } else if ast.instructions.len() == 1 {
+            Some(ast.instructions.into_iter().next().unwrap())
         } else {
             Some((ASTNode::Tuple(ast, false), loc.clone()))
         }

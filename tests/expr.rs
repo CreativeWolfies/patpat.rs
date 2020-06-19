@@ -40,3 +40,14 @@ fn div() {
         test::execute(test::compile(&src))
     );
 }
+
+#[test]
+
+fn composite_fn() {
+    test::init_testenv();
+    let src = test::load("test/expr/composite_fn.patpat");
+    assert_eq!(
+        VariableValue::Number(1.0),
+        test::execute(test::compile(&src))
+    );
+}

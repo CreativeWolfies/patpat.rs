@@ -62,10 +62,10 @@ pub fn construct_expression<'a>(
                     if let (Token::Define, define_loc) = &tree.tokens[offset2 + 2] {
                         if first_term_ops.len() > 0 {
                             CompError::new(
-                18,
-                String::from("Invalid term in interpretation definition: unexpected unary operator"),
-                CompLocation::from(&tree.tokens[*offset].1)
-              ).print_and_exit();
+                                18,
+                                String::from("Invalid term in interpretation definition: unexpected unary operator"),
+                                CompLocation::from(&tree.tokens[*offset].1)
+                            ).print_and_exit();
                         }
                         let res = handle_interpretation_definition(
                             tree.clone(),
@@ -150,39 +150,56 @@ pub fn construct_expression<'a>(
                             .print_and_exit();
                         }
                     } else if let Operator::MemberAccessor = op {
-                        if let (ASTNode::PatternCall(name, body), call_loc) = res {
-                            // Handle method calls, ie. `variable.method()`
-                            if term_ops.len() == 0 {
-                                if let (Token::Pattern(_), _) = &tree.tokens[offset2 - 2] {
-                                    res = (ASTNode::MethodCall(name.clone(), body), call_loc);
+                        match res {
+                            (ASTNode::PatternCall(name, body), call_loc) => {
+                                // Handle method calls, ie. `variable.method()`
+                                if term_ops.len() == 0 {
+                                    if let (Token::Pattern(_), _) = &tree.tokens[offset2 - 2] {
+                                        res = (ASTNode::MethodCall(name.clone(), body), call_loc);
+                                    } else {
+                                        // restitude `res`
+                                        res = (ASTNode::PatternCall(name, body), call_loc);
+                                    }
                                 } else {
-                                    // restitude `res`
                                     res = (ASTNode::PatternCall(name, body), call_loc);
                                 }
-                            } else {
-                                res = (ASTNode::PatternCall(name, body), call_loc);
                             }
-                        } else if let (ASTNode::Variable(name), sym_loc) = res {
-                            // Handle member accessing, ie. `variable.member` (to differentiate it with `Variable`s which are later resolved)
-                            if term_ops.len() == 0 {
-                                if let (Token::Symbol(_), _) = &tree.tokens[offset2 - 1] {
-                                    res = (ASTNode::Member(name), sym_loc);
+                            (ASTNode::Variable(name), sym_loc) => {
+                                // Handle member accessing, ie. `variable.member` (to differentiate it with `Variable`s which are later resolved)
+                                if term_ops.len() == 0 {
+                                    if let (Token::Symbol(_), _) = &tree.tokens[offset2 - 1] {
+                                        res = (ASTNode::Member(name), sym_loc);
+                                    } else {
+                                        // restitude `res`
+                                        res = node_into_tuple(ASTNode::Variable(name), loc);
+                                    }
                                 } else {
-                                    // restitude `res`
-                                    res = (ASTNode::Variable(name), sym_loc);
+                                    res = node_into_tuple(ASTNode::Variable(name), loc);
                                 }
-                            } else {
-                                res = (ASTNode::Variable(name), sym_loc);
+                            }
+                            (ASTNode::Tuple(ast, is_partial), tuple_loc) => {
+                                res = (ASTNode::Tuple(ast, is_partial), tuple_loc);
+                            }
+                            (ASTNode::Nil, tuple_loc) => {
+                                res = (ASTNode::Nil, tuple_loc);
+                            }
+                            (x, loc) => {
+                                res = node_into_tuple(x, loc);
                             }
                         }
                     } else if let Operator::PartialApplication = op {
                         match res {
-                            (ASTNode::Tuple(ast, _), args_loc) => res = (ASTNode::Tuple(ast, true), args_loc),
+                            (ASTNode::Tuple(ast, _), args_loc) => {
+                                res = (ASTNode::Tuple(ast, true), args_loc)
+                            }
                             (_, args_loc) => CompError::new(
-                                    109,
-                                    String::from("Expected tuple after the partial application operator"),
-                                    args_loc.into()
-                                ).print_and_exit(),
+                                109,
+                                String::from(
+                                    "Expected tuple after the partial application operator",
+                                ),
+                                args_loc.into(),
+                            )
+                            .print_and_exit(),
                         }
                     } else {
                         // Non-specific operator: flatten the n-th term
@@ -417,4 +434,13 @@ fn err_op_precedence(loc: Location<'_>, main_loc: Location<'_>) -> ! {
         CompLocation::None,
     )
     .print_and_exit();
+}
+
+fn node_into_tuple<'a, 'b>(node: ASTNode<'a>, loc: Location<'b>) -> (ASTNode<'a>, Location<'b>)
+where
+    'b: 'a,
+{
+    let mut ast = AST::new(ASTKind::Tuple);
+    ast.instructions.push((node, loc.clone()));
+    (ASTNode::Tuple(ast, false), loc)
 }

@@ -163,3 +163,13 @@ where
     )
     .print_and_exit();
 }
+
+pub fn is_truthy(value: &VariableValue) -> bool {
+    match value {
+        VariableValue::Number(x) => *x != 0.0,
+        VariableValue::Boolean(x) => *x,
+        VariableValue::String(x) => x.len() > 0,
+        VariableValue::Nil => false,
+        _ => true,
+    }
+}

@@ -38,6 +38,24 @@ impl<'a> Callable<'a> for CompositeFunction<'a> {
         parent: Option<VariableValue<'a>>,
     ) -> VariableValue<'a> {
         match self.op {
+            Operator::And => {
+                let left = self.left.0.call_member(args.clone(), location.clone(), contexes, self.left.1.clone(), parent.clone());
+                if is_truthy(&left) {
+                    let right = self.right.0.call_member(args, location.clone(), contexes, self.right.1.clone(), parent);
+                    left.binary_op(right, &self.op, location)
+                } else {
+                    left
+                }
+            }
+            Operator::Or => {
+                let left = self.left.0.call_member(args.clone(), location.clone(), contexes, self.left.1.clone(), parent.clone());
+                if !is_truthy(&left) {
+                    let right = self.right.0.call_member(args, location.clone(), contexes, self.right.1.clone(), parent);
+                    left.binary_op(right, &self.op, location)
+                } else {
+                    left
+                }
+            }
             _ => {
                 let left = self.left.0.call_member(args.clone(), location.clone(), contexes, self.left.1.clone(), parent.clone());
                 let right = self.right.0.call_member(args, location.clone(), contexes, self.right.1.clone(), parent);

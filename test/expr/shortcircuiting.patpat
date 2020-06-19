@@ -1,0 +1,17 @@
+let count_a: 0
+let count_b: 0
+
+'a: () => {
+  count_a: count_a + 1
+  false
+}
+
+'b: () => {
+  count_b: count_b + 1
+  true
+}
+
+('a && 'a).()
+('b || 'b).()
+
+(count_a, count_b)

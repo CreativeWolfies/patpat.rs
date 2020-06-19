@@ -44,7 +44,7 @@ pub fn std_rast<'a>() -> RAST<'a> {
             return VariableValue::Nil;
         }
         let mut iter = args.into_iter();
-        if is_truthy(iter.next().unwrap()) {
+        if is_truthy(&iter.next().unwrap()) {
             match iter.next().unwrap() {
                 VariableValue::Function(fun, closure) => {
                     // TODO: give Callable a n_args() method
@@ -81,7 +81,7 @@ pub fn std_rast<'a>() -> RAST<'a> {
         let mut iter = args.into_iter();
 
         if has_bailed(&last_value) {
-            if is_truthy(iter.next().unwrap()) { // 1st argument: condition
+            if is_truthy(&iter.next().unwrap()) { // 1st argument: condition
                 match iter.next().unwrap() { // 2nd argument
                     VariableValue::Function(fun, closure) => fun.call(vec![], loc, contexes, closure),
                     x => x,
@@ -236,16 +236,6 @@ where
 {
     rast.patterns
         .push(Rc::new(IntPattern::new(name.to_string(), fun)));
-}
-
-fn is_truthy(value: VariableValue) -> bool {
-    match value {
-        VariableValue::Number(x) => x != 0.0,
-        VariableValue::Boolean(x) => x,
-        VariableValue::String(x) => x.len() > 0,
-        VariableValue::Nil => false,
-        _ => true,
-    }
 }
 
 fn has_bailed(value: &VariableValue) -> bool {

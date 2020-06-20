@@ -112,3 +112,13 @@ fn wrangle_risk() {
     let src = test::load("test/patterns/wrangle_risk.patpat");
     test::execute(test::compile(&src));
 }
+
+#[test]
+#[should_panic(
+    expected = "Expected symbol a in function body to either be in a closure (#with) or to be explicitedly referenced (#ref)"
+)]
+fn error_ref() {
+    test::init_testenv();
+    let src = test::load("test/patterns/error_ref.patpat");
+    test::execute(test::compile(&src));
+}

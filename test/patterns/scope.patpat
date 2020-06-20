@@ -3,7 +3,7 @@
 let f
 {
   let a
-  f: () => {a: a + 1}
+  f: (#ref(a)) => {a: a + 1}
 }
 
 f.()

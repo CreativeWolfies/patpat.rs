@@ -1,5 +1,5 @@
 let sum: 0
-#for(1, 10, (x) => {
+#for(1, 10, (x, #ref(sum)) => {
   sum: sum + x
 })
 

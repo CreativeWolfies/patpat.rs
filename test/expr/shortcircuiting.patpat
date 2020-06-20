@@ -1,12 +1,12 @@
 let count_a: 0
 let count_b: 0
 
-'a: () => {
+'a: (#ref(count_a)) => {
   count_a: count_a + 1
   false
 }
 
-'b: () => {
+'b: (#ref(count_b)) => {
   count_b: count_b + 1
   true
 }

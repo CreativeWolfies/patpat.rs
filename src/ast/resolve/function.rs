@@ -53,7 +53,8 @@ impl<'a> From<(Function<'a>, RASTWeak<'a>, Location<'a>)> for RFunction<'a> {
 
         let body = RAST::resolve(function.body, Rc::downgrade(&init));
 
-        let mut required_ctx = scan_body_reqs(body.clone());
+        let mut required_ctx =
+            scan_body_reqs(body.clone(), &function.refs, init.borrow().depth, &loc);
         if let Some((depth, _, _)) = required_ctx {
             if depth >= init.borrow().depth {
                 required_ctx = None;
@@ -136,23 +137,131 @@ impl<'a> From<(FunctionArg, RASTWeak<'a>, Location<'a>)> for RFunctionArg<'a> {
     }
 }
 
-fn scan_body_reqs<'a>(body: RASTRef<'a>) -> Option<(usize, u128, Location<'a>)> {
+fn scan_body_reqs<'a>(
+    body: RASTRef<'a>,
+    refs: &'_ Vec<(String, Location<'a>)>,
+    max_depth: usize,
+    fn_location: &Location<'a>,
+) -> Option<(usize, u128, Location<'a>)> {
     let mut res: Option<(usize, u128, Location)> = None;
     for instruction in &body.borrow().instructions {
-        match instruction {
-            (RASTNode::Variable(sym), loc)
-            | (RASTNode::VariableDef(sym, _), loc) => {
-                match &res {
-                    None => res = Some((sym.depth, sym.ulid, loc.clone())),
-                    Some((depth, _ulid, _loc)) => {
-                        if *depth < sym.depth {
-                            res = Some((sym.depth, sym.ulid, loc.clone()));
-                        }
-                    }
-                }
-            },
-            _ => {}
-        }
+        res = merge_reqs(
+            res,
+            scan_body_reqs_node(
+                (&instruction.0, &instruction.1),
+                refs,
+                max_depth,
+                fn_location,
+            ),
+        );
     }
     res
+}
+
+fn scan_body_reqs_node<'a>(
+    instruction: (&RASTNode<'a>, &Location<'a>),
+    refs: &'_ Vec<(String, Location<'a>)>,
+    max_depth: usize,
+    fn_location: &Location<'a>,
+) -> Option<(usize, u128, Location<'a>)> {
+    match instruction {
+        (RASTNode::Variable(sym), loc) => {
+            scan_body_reqs_sym(sym, loc, refs, max_depth, fn_location)
+        }
+        (RASTNode::VariableDef(sym, value), loc) => merge_reqs(
+            scan_body_reqs_node((value.as_ref(), loc), refs, max_depth, fn_location),
+            scan_body_reqs_sym(sym, loc, refs, max_depth, fn_location),
+        ),
+        (RASTNode::PatternCall(_, rast), _loc)
+        | (RASTNode::Block(rast), _loc)
+        | (RASTNode::MethodCall(_, rast), _loc) => {
+            scan_body_reqs(rast.clone(), refs, max_depth, fn_location)
+        }
+        (RASTNode::ComplexDef(expr, _, value), loc) => merge_reqs(
+            scan_body_reqs_node((value.as_ref(), loc), refs, max_depth, fn_location),
+            scan_body_reqs_expr(expr, loc, refs, max_depth, fn_location),
+        ),
+        (RASTNode::Expression(expr), loc) => {
+            scan_body_reqs_expr(expr, loc, refs, max_depth, fn_location)
+        }
+        (RASTNode::Tuple(tuple, _), _loc) => {
+            let mut res: Option<(usize, u128, Location)> = None;
+            for instruction in tuple {
+                res = merge_reqs(
+                    res,
+                    scan_body_reqs_node(
+                        (&instruction.0, &instruction.1),
+                        refs,
+                        max_depth,
+                        fn_location,
+                    ),
+                );
+            }
+            res
+        }
+        _ => None,
+    }
+}
+
+fn scan_body_reqs_sym<'a>(
+    sym: &RSymRef,
+    location: &Location<'a>,
+    refs: &'_ Vec<(String, Location<'a>)>,
+    max_depth: usize,
+    fn_location: &Location<'a>,
+) -> Option<(usize, u128, Location<'a>)> {
+    if sym.depth < max_depth {
+        if let None = refs.iter().find(|(name, _loc)| *name == sym.name) {
+            CompError::new(
+                154,
+                format!("Expected symbol {} in function body to either be in a closure (#with) or to be explicitedly referenced (#ref)", sym.name),
+                location.into()
+            ).append(
+                format!("Consider adding #with({}) or #ref({}) to the function's parameters", sym.name, sym.name),
+                fn_location.into()
+            ).print_and_exit();
+        }
+        Some((sym.depth, sym.ulid, location.clone()))
+    } else {
+        None
+    }
+}
+
+fn scan_body_reqs_expr<'a>(
+    expr: &RExpression<'a>,
+    location: &Location<'a>,
+    refs: &Vec<(String, Location<'a>)>,
+    max_depth: usize,
+    fn_location: &Location<'a>,
+) -> Option<(usize, u128, Location<'a>)> {
+    let mut res: Option<(usize, u128, Location)> = None;
+    for term in &expr.terms {
+        res = merge_reqs(
+            res,
+            match term {
+                RExprTerm::Op(_) => None,
+                RExprTerm::Push(node) => {
+                    scan_body_reqs_node((node, location), refs, max_depth, fn_location)
+                }
+            },
+        );
+    }
+    res
+}
+
+fn merge_reqs<'a>(
+    a: Option<(usize, u128, Location<'a>)>,
+    b: Option<(usize, u128, Location<'a>)>,
+) -> Option<(usize, u128, Location<'a>)> {
+    match (a, b) {
+        (None, y) => y,
+        (Some((a_depth, a_ulid, a_loc)), Some((b_depth, b_ulid, b_loc))) => {
+            if a_depth < b_depth {
+                Some((b_depth, b_ulid, b_loc))
+            } else {
+                Some((a_depth, a_ulid, a_loc))
+            }
+        }
+        (x, None) => x,
+    }
 }

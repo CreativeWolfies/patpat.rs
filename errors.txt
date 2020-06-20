@@ -34,6 +34,7 @@
 151: Unknown symbol
 152: Unknown pattern/method
 153: Unknown struct
+154: Expected symbol in function body to either be in a closure or to be explicitedly referenced with #ref
 
 201: Mixed types in expression
 202: Invalid operator in expression

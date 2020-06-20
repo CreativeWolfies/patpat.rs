@@ -1,0 +1,9 @@
+// This script should error out
+
+let a
+
+//    v--- one would need to insert #with(a) or #ref(a) here
+'fn: () => {
+  #if(a, 0)
+  #else(1)
+}
